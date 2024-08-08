@@ -11,7 +11,8 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT } = process.env;
+const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN } = process.env;
+const PORT = 3000;
 
 app.post("/webhook", async (req, res) => {
   // log incoming messages
@@ -93,6 +94,6 @@ app.get("/", (req, res) => {
 Checkout README.md to start.</pre>`);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is listening on port: ${PORT}`);
 });
