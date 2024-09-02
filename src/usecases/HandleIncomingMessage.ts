@@ -1,15 +1,22 @@
 import axios from "axios";
 import { Message, Metadata } from "../domain/entities/Message";
+import { AIGateway } from "../interfaces/gateways/AIGateway";
 
 export class HandleIncomingMessage {
   constructor(
     private graphApiToken: string,
+    private aiGateway: AIGateway,
   ) {}
 
   async execute(message: Message, metadata: Metadata) {
     try {
       await this.markMessageAsRead(message, metadata);
-      await this.sendReply(message, metadata);
+
+      // Get AI response
+      const aiResponse = await this.aiGateway.getAIResponse(message.text.body);
+
+      // Send AI response as a reply
+      await this.sendReply(message, metadata, aiResponse);
     } catch (error) {
       console.log(JSON.stringify(error, null, 2));
     }
@@ -18,6 +25,7 @@ export class HandleIncomingMessage {
   private async sendReply(
     message: Message,
     metadata: Metadata,
+    aiResponse: string,
   ) {
     await axios({
       method: "POST",
@@ -29,7 +37,7 @@ export class HandleIncomingMessage {
       data: {
         messaging_product: "whatsapp",
         to: message.from,
-        text: { body: "Echo: " + message.text.body },
+        text: { body: aiResponse },
         context: {
           message_id: message.id,
         },
