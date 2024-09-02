@@ -5,9 +5,9 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node dist/main.js",
     "build": "tsc",
-    "dev": "tsx src/server.ts"
+    "dev": "tsx src/main.ts"
   },
   "author": "WhatsApp Team",
   "license": "MIT",
