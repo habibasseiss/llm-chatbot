@@ -7,7 +7,6 @@ const { GRAPH_API_TOKEN } = process.env;
 
 const handleIncomingMessage = new HandleIncomingMessage(
   GRAPH_API_TOKEN!,
-  "business_phone_number_id",
 );
 
 const webhookController = new WebhookController(handleIncomingMessage);

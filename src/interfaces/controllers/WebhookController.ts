@@ -14,7 +14,7 @@ export class WebhookController {
       ?.value?.metadata;
 
     if (message && metadata) {
-      await this.handleIncomingMessage.execute(message);
+      await this.handleIncomingMessage.execute(message, metadata);
     }
 
     res.sendStatus(200);

@@ -1,26 +1,28 @@
 import axios from "axios";
-import { Message } from "../domain/entities/Message";
+import { Message, Metadata } from "../domain/entities/Message";
 
 export class HandleIncomingMessage {
   constructor(
     private graphApiToken: string,
-    private businessPhoneNumberId: string,
   ) {}
 
-  async execute(message: Message) {
+  async execute(message: Message, metadata: Metadata) {
     try {
-      await this.sendReply(message);
-      await this.markMessageAsRead(message);
+      await this.markMessageAsRead(message, metadata);
+      await this.sendReply(message, metadata);
     } catch (error) {
-      console.log(error);
+      console.log(JSON.stringify(error, null, 2));
     }
   }
 
-  private async sendReply(message: Message) {
+  private async sendReply(
+    message: Message,
+    metadata: Metadata,
+  ) {
     await axios({
       method: "POST",
       url:
-        `https://graph.facebook.com/v18.0/${this.businessPhoneNumberId}/messages`,
+        `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
       headers: {
         Authorization: `Bearer ${this.graphApiToken}`,
       },
@@ -35,11 +37,11 @@ export class HandleIncomingMessage {
     });
   }
 
-  private async markMessageAsRead(message: Message) {
+  private async markMessageAsRead(message: Message, metadata: Metadata) {
     await axios({
       method: "POST",
       url:
-        `https://graph.facebook.com/v18.0/${this.businessPhoneNumberId}/messages`,
+        `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
       headers: {
         Authorization: `Bearer ${this.graphApiToken}`,
       },
