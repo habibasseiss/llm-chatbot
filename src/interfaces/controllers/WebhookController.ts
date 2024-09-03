@@ -1,6 +1,6 @@
+import { Message, Metadata } from "@/domain/entities/Message";
+import { HandleIncomingMessage } from "@/usecases/HandleIncomingMessage";
 import { Request, Response } from "express";
-import { Message, Metadata } from "../../domain/entities/Message";
-import { HandleIncomingMessage } from "../../usecases/HandleIncomingMessage";
 
 export class WebhookController {
   constructor(private handleIncomingMessage: HandleIncomingMessage) {}

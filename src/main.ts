@@ -1,7 +1,7 @@
-import { GroqAIGateway } from "./infrastructure/gateways/GroqAIGateway";
-import { ExpressServer } from "./infrastructure/webserver/ExpressServer";
-import { WebhookController } from "./interfaces/controllers/WebhookController";
-import { HandleIncomingMessage } from "./usecases/HandleIncomingMessage";
+import { GroqAIGateway } from "@/infrastructure/gateways/GroqAIGateway";
+import { ExpressServer } from "@/infrastructure/webserver/ExpressServer";
+import { WebhookController } from "@/interfaces/controllers/WebhookController";
+import { HandleIncomingMessage } from "@/usecases/HandleIncomingMessage";
 
 const PORT = 3000;
 const { GRAPH_API_TOKEN, GROQ_API_KEY } = process.env;

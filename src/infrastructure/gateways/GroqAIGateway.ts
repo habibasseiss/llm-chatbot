@@ -1,5 +1,5 @@
+import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import Groq from "groq-sdk";
-import { AIGateway } from "../../interfaces/gateways/AIGateway";
 
 export class GroqAIGateway implements AIGateway {
   private groq;

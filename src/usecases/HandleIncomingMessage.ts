@@ -1,6 +1,6 @@
+import { Message, Metadata } from "@/domain/entities/Message";
+import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import axios from "axios";
-import { Message, Metadata } from "../domain/entities/Message";
-import { AIGateway } from "../interfaces/gateways/AIGateway";
 
 export class HandleIncomingMessage {
   constructor(

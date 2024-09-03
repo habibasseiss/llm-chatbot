@@ -1,5 +1,5 @@
+import { WebhookController } from "@/interfaces/controllers/WebhookController";
 import express from "express";
-import { WebhookController } from "../../interfaces/controllers/WebhookController";
 
 export class ExpressServer {
   private app = express();
