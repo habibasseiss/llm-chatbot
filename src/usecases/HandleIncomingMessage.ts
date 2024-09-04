@@ -13,7 +13,10 @@ export class HandleIncomingMessage {
       await this.markMessageAsRead(message, metadata);
 
       // Get AI response
-      const aiResponse = await this.aiGateway.getAIResponse(message.text.body);
+      const aiResponse = await this.aiGateway.getAIResponse(
+        message.text.body,
+        "user",
+      );
 
       // Send AI response as a reply
       await this.sendReply(message, metadata, aiResponse);

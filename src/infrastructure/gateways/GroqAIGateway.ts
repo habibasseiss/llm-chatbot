@@ -8,11 +8,14 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  async getAIResponse(message: string): Promise<string> {
+  async getAIResponse(
+    message: string,
+    role: "user" | "assistant",
+  ): Promise<string> {
     const response = await this.groq.chat.completions.create({
       messages: [
         {
-          role: "user",
+          role: role,
           content: message,
         },
       ],

@@ -1,3 +1,3 @@
 export interface AIGateway {
-  getAIResponse(message: string): Promise<string>;
+  getAIResponse(message: string, role: "user" | "assistant"): Promise<string>;
 }
