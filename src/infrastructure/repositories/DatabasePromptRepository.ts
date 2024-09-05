@@ -1,11 +1,11 @@
-import { ChatHistory, Prompt } from "@/domain/entities/Prompt";
+import { ChatHistory } from "@/domain/entities/Prompt";
 import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
-import { Pool } from "pg";
+import pg from "pg";
+
+const { Pool } = pg;
 
 export class DatabasePromptRepository implements PromptRepository {
-  private prompts: { [key: string]: Prompt[] } = {};
-
-  private pool: Pool;
+  private pool: pg.Pool;
 
   constructor(connectionString: string) {
     this.pool = new Pool({
