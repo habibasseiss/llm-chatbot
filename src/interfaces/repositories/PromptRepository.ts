@@ -1,6 +1,16 @@
-import { ChatHistory, Prompt } from "@/domain/entities/Prompt";
+import { ChatHistory } from "@/domain/entities/Prompt";
 
 export interface PromptRepository {
   getPromptHistory(userId: string): Promise<ChatHistory>;
-  savePrompt(prompt: Prompt): Promise<void>;
+  savePrompt({
+    content,
+    role,
+    user_id,
+    user_profile_name,
+  }: {
+    content: string;
+    role: string;
+    user_id: string;
+    user_profile_name?: string;
+  }): Promise<void>;
 }

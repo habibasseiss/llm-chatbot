@@ -1,4 +1,8 @@
-import { Message, Metadata } from "@/domain/entities/Message";
+import {
+  Message,
+  Metadata,
+  WhatsAppWebhookEvent,
+} from "@/domain/entities/Message";
 import { HandleIncomingMessage } from "@/usecases/HandleIncomingMessage";
 import { Request, Response } from "express";
 
@@ -8,13 +12,13 @@ export class WebhookController {
   async handleWebhook(req: Request, res: Response) {
     console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
 
-    const message: Message | undefined = req.body.entry?.[0]?.changes?.[0]
-      ?.value?.messages?.[0];
-    const metadata: Metadata | undefined = req.body.entry?.[0]?.changes?.[0]
-      ?.value?.metadata;
+    const webhookEvent: WhatsAppWebhookEvent = req.body.entry?.[0]?.changes?.[0]
+      ?.value;
+    const message: Message | undefined = webhookEvent?.messages?.[0];
+    const metadata: Metadata | undefined = webhookEvent?.metadata;
 
     if (message && metadata) {
-      await this.handleIncomingMessage.execute(message, metadata);
+      await this.handleIncomingMessage.execute(webhookEvent);
     }
 
     res.sendStatus(200);

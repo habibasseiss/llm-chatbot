@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Message, Metadata } from "../../src/domain/entities/Message";
-import { ChatHistory, Prompt } from "../../src/domain/entities/Prompt";
+import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
+import { ChatHistory } from "../../src/domain/entities/Prompt";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
 import { PromptRepository } from "../../src/interfaces/repositories/PromptRepository";
 import { HandleIncomingMessage } from "../../src/usecases/HandleIncomingMessage";
@@ -11,23 +11,33 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 class MockAIGateway implements AIGateway {
   async getAIResponse(chatHistory: ChatHistory): Promise<string> {
-    return `AI response to: ${chatHistory.messages[0].content}`;
+    return `AI response`;
   }
 }
 
 export class MockPromptRepository implements PromptRepository {
-  private prompts: { [key: string]: Prompt[] } = {};
+  private prompts: { [key: string]: any } = {};
 
   async getPromptHistory(userId: string): Promise<ChatHistory> {
     return { messages: this.prompts[userId] || [] };
   }
 
-  async savePrompt(prompt: Prompt): Promise<void> {
-    if (!prompt.id) return;
-    if (!this.prompts[prompt.id]) {
-      this.prompts[prompt.id] = [];
+  async savePrompt({
+    content,
+    role,
+    user_id,
+    user_profile_name,
+  }: {
+    content: string;
+    role: string;
+    user_id: string;
+    user_profile_name: string;
+  }): Promise<void> {
+    const prompt = { content, role, user_id, user_profile_name };
+    if (!this.prompts[prompt.user_id]) {
+      this.prompts[prompt.user_id] = [];
     }
-    this.prompts[prompt.id].push(prompt);
+    this.prompts[prompt.user_id].push(prompt);
   }
 }
 
@@ -35,6 +45,7 @@ describe("HandleIncomingMessage", () => {
   let handleIncomingMessage: HandleIncomingMessage;
   let aiGateway: AIGateway;
   let promptRepository: PromptRepository;
+  let webhookEvent: WhatsAppWebhookEvent;
 
   beforeEach(() => {
     aiGateway = new MockAIGateway();
@@ -44,30 +55,50 @@ describe("HandleIncomingMessage", () => {
       aiGateway,
       promptRepository,
     );
+    webhookEvent = {
+      "messaging_product": "whatsapp",
+      "metadata": {
+        "display_phone_number": "15556109711",
+        "phone_number_id": "284011161465592",
+      },
+      "contacts": [
+        {
+          "profile": {
+            "name": "Habib",
+          },
+          "wa_id": "556792326246",
+        },
+      ],
+      "messages": [
+        {
+          "from": "556792326246",
+          "id":
+            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+          "timestamp": "1722539741",
+          "text": {
+            "body": "oi com o samuel",
+          },
+          "type": "text",
+        },
+      ],
+    };
   });
 
   it("should send a reply with AI response", async () => {
-    const message: Message = {
-      type: "text",
-      from: "12345",
-      text: { body: "Hello" },
-      id: "msgid",
-    };
-    const metadata: Metadata = {
-      phone_number_id: "phone-number-id",
-    };
-
-    await handleIncomingMessage.execute(message, metadata);
+    await handleIncomingMessage.execute(webhookEvent);
 
     expect(mockedAxios).toHaveBeenCalledWith(
       expect.objectContaining({
         url:
-          `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
+          `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
         data: {
           messaging_product: "whatsapp",
-          to: "12345",
-          text: { body: "AI response to: Hello" },
-          context: { message_id: "msgid" },
+          to: "556792326246",
+          text: { body: "AI response" },
+          context: {
+            message_id:
+              "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+          },
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
       }),
@@ -75,26 +106,17 @@ describe("HandleIncomingMessage", () => {
   });
 
   it("should mark the message as read", async () => {
-    const message: Message = {
-      type: "text",
-      from: "12345",
-      text: { body: "Hello" },
-      id: "msgid",
-    };
-    const metadata: Metadata = {
-      phone_number_id: "phone-number-id",
-    };
-
-    await handleIncomingMessage.execute(message, metadata);
+    await handleIncomingMessage.execute(webhookEvent);
 
     expect(mockedAxios).toHaveBeenCalledWith(
       expect.objectContaining({
         url:
-          `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
+          `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
         data: {
           messaging_product: "whatsapp",
           status: "read",
-          message_id: "msgid",
+          message_id:
+            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
       }),

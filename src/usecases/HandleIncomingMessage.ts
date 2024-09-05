@@ -1,5 +1,8 @@
-import { Message, Metadata } from "@/domain/entities/Message";
-import { ChatHistory } from "@/domain/entities/Prompt";
+import {
+  Message,
+  Metadata,
+  WhatsAppWebhookEvent,
+} from "@/domain/entities/Message";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
 import axios from "axios";
@@ -11,32 +14,29 @@ export class HandleIncomingMessage {
     private promptRepository: PromptRepository,
   ) {}
 
-  async execute(message: Message, metadata: Metadata) {
+  async execute(webhookEvent: WhatsAppWebhookEvent) {
     try {
+      const message: Message | undefined = webhookEvent?.messages?.[0];
+      const metadata: Metadata | undefined = webhookEvent?.metadata;
+
       await this.markMessageAsRead(message, metadata);
 
-      // TODO: get prompt history from database
-      // const messageHistory = await this.promptRepository.getPromptHistory(
-      //   message.from,
-      // );
+      const chatHistory = await this.promptRepository.getPromptHistory(
+        message.from,
+      );
 
-      const chatHistory: ChatHistory = {
-        messages: [
-          {
-            id: "xxx",
-            role: "user",
-            content: message.text.body,
-          },
-        ],
-      };
-
-      // Get AI response
       const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
 
-      // Send AI response as a reply
+      await this.promptRepository.savePrompt({
+        content: message.text!.body,
+        role: "user",
+        user_id: message.from,
+        user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
+      });
+
       await this.sendReply(message, metadata, aiResponse);
     } catch (error) {
-      console.log(JSON.stringify(error, null, 2));
+      console.log(error);
     }
   }
 

@@ -8,6 +8,9 @@ primary_region = 'gru'
 
 [build]
 
+[deploy]
+  release_command = 'npm run migrate up'
+
 [http_service]
   internal_port = 3000
   force_https = true
