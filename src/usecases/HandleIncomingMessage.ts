@@ -18,19 +18,25 @@ export class HandleIncomingMessage {
     try {
       const message: Message | undefined = webhookEvent?.messages?.[0];
       const metadata: Metadata | undefined = webhookEvent?.metadata;
+      const userId = message.from;
 
       await this.markMessageAsRead(message, metadata);
-
-      const chatHistory = await this.promptRepository.getPromptHistory(
-        message.from,
-      );
-
-      const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
 
       await this.promptRepository.savePrompt({
         content: message.text!.body,
         role: "user",
-        user_id: message.from,
+        user_id: userId,
+        user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
+      });
+
+      const chatHistory = await this.promptRepository.getPromptHistory(userId);
+
+      const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
+
+      await this.promptRepository.savePrompt({
+        content: aiResponse,
+        role: "assistant",
+        user_id: userId,
         user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
       });
 

@@ -1,6 +1,6 @@
 export interface Prompt {
   id: string;
-  role: "user" | "assistant" | "system";
+  role: Role;
   content: string;
   user_id: string;
   user_profile_name: string;
@@ -9,3 +9,5 @@ export interface Prompt {
 export interface ChatHistory {
   messages: Array<Prompt>;
 }
+
+export type Role = "user" | "assistant" | "system";
