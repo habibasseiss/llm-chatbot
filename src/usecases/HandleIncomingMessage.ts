@@ -1,22 +1,37 @@
 import { Message, Metadata } from "@/domain/entities/Message";
+import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
+import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
 import axios from "axios";
 
 export class HandleIncomingMessage {
   constructor(
     private graphApiToken: string,
     private aiGateway: AIGateway,
+    private promptRepository: PromptRepository,
   ) {}
 
   async execute(message: Message, metadata: Metadata) {
     try {
       await this.markMessageAsRead(message, metadata);
 
+      // TODO: get prompt history from database
+      // const messageHistory = await this.promptRepository.getPromptHistory(
+      //   message.from,
+      // );
+
+      const chatHistory: ChatHistory = {
+        messages: [
+          {
+            id: "xxx",
+            role: "user",
+            content: message.text.body,
+          },
+        ],
+      };
+
       // Get AI response
-      const aiResponse = await this.aiGateway.getAIResponse(
-        message.text.body,
-        "user",
-      );
+      const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
 
       // Send AI response as a reply
       await this.sendReply(message, metadata, aiResponse);

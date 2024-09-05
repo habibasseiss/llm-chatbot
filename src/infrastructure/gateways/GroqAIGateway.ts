@@ -1,3 +1,4 @@
+import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import Groq from "groq-sdk";
 
@@ -8,17 +9,12 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  async getAIResponse(
-    message: string,
-    role: "user" | "assistant",
-  ): Promise<string> {
+  async getAIResponse(chatHistory: ChatHistory): Promise<string> {
     const response = await this.groq.chat.completions.create({
-      messages: [
-        {
-          role: role,
-          content: message,
-        },
-      ],
+      messages: chatHistory.messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+      })),
       model: "llama-3.1-8b-instant",
     });
 

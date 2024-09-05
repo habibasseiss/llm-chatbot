@@ -1,3 +1,5 @@
+import { ChatHistory } from "@/domain/entities/Prompt";
+
 export interface AIGateway {
-  getAIResponse(message: string, role: "user" | "assistant"): Promise<string>;
+  getAIResponse(chatHistory: ChatHistory): Promise<string>;
 }
