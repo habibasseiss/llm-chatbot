@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { WebhookController } from "../../src/interfaces/controllers/WebhookController";
-import { HandleIncomingMessage } from "../../src/usecases/HandleIncomingMessage";
+import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
 class MockHandleIncomingMessage extends HandleIncomingMessage {
   async execute() {
@@ -14,10 +14,12 @@ describe("WebhookController", () => {
   let controller: WebhookController;
 
   beforeEach(() => {
+    console.log = jest.fn();
     const mockHandleIncomingMessage = new MockHandleIncomingMessage(
       "mock-graph-api-token",
       { getAIResponse: jest.fn() },
       { getPromptHistory: jest.fn(), savePrompt: jest.fn() },
+      { getSystemPrompt: jest.fn() },
     );
 
     controller = new WebhookController(mockHandleIncomingMessage);

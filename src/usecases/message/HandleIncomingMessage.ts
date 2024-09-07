@@ -4,14 +4,17 @@ import {
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
+import { APIGateway } from "@/interfaces/gateways/APIGateway";
 import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
+import UseCase from "@/usecases/UseCase";
 import axios from "axios";
 
-export class HandleIncomingMessage {
+export class HandleIncomingMessage implements UseCase {
   constructor(
     private graphApiToken: string,
     private aiGateway: AIGateway,
     private promptRepository: PromptRepository,
+    private apiGateway: APIGateway,
   ) {}
 
   async execute(webhookEvent: WhatsAppWebhookEvent) {
@@ -22,6 +25,18 @@ export class HandleIncomingMessage {
 
       await this.markMessageAsRead(message, metadata);
 
+      let chatHistory = await this.promptRepository.getPromptHistory(userId);
+      if (chatHistory.messages.length === 0) {
+        const systemPrompt = await this.apiGateway.getSystemPrompt();
+        await this.promptRepository.savePrompt({
+          content: systemPrompt,
+          role: "system",
+          user_id: userId,
+          user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
+        });
+        chatHistory = await this.promptRepository.getPromptHistory(userId);
+      }
+
       await this.promptRepository.savePrompt({
         content: message.text!.body,
         role: "user",
@@ -29,7 +44,7 @@ export class HandleIncomingMessage {
         user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
       });
 
-      const chatHistory = await this.promptRepository.getPromptHistory(userId);
+      chatHistory = await this.promptRepository.getPromptHistory(userId);
 
       const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
 
@@ -62,9 +77,6 @@ export class HandleIncomingMessage {
         messaging_product: "whatsapp",
         to: message.from,
         text: { body: aiResponse },
-        context: {
-          message_id: message.id,
-        },
       },
     });
   }

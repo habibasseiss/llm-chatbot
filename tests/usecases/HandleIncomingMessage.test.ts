@@ -1,9 +1,10 @@
 import axios from "axios";
 import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
-import { ChatHistory } from "../../src/domain/entities/Prompt";
+import { ChatHistory, Role } from "../../src/domain/entities/Prompt";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
+import { APIGateway } from "../../src/interfaces/gateways/APIGateway";
 import { PromptRepository } from "../../src/interfaces/repositories/PromptRepository";
-import { HandleIncomingMessage } from "../../src/usecases/HandleIncomingMessage";
+import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
 // Mock axios to prevent actual HTTP requests
 jest.mock("axios");
@@ -12,6 +13,12 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 class MockAIGateway implements AIGateway {
   async getAIResponse(chatHistory: ChatHistory): Promise<string> {
     return `AI response`;
+  }
+}
+
+class MockAPIGateway implements APIGateway {
+  async getSystemPrompt(): Promise<string> {
+    return `System prompt`;
   }
 }
 
@@ -29,7 +36,7 @@ export class MockPromptRepository implements PromptRepository {
     user_profile_name,
   }: {
     content: string;
-    role: string;
+    role: Role;
     user_id: string;
     user_profile_name: string;
   }): Promise<void> {
@@ -46,14 +53,17 @@ describe("HandleIncomingMessage", () => {
   let aiGateway: AIGateway;
   let promptRepository: PromptRepository;
   let webhookEvent: WhatsAppWebhookEvent;
+  let apiGateway: MockAPIGateway;
 
   beforeEach(() => {
     aiGateway = new MockAIGateway();
+    apiGateway = new MockAPIGateway();
     promptRepository = new MockPromptRepository();
     handleIncomingMessage = new HandleIncomingMessage(
       "mock-graph-api-token",
       aiGateway,
       promptRepository,
+      apiGateway,
     );
     webhookEvent = {
       "messaging_product": "whatsapp",
@@ -95,10 +105,6 @@ describe("HandleIncomingMessage", () => {
           messaging_product: "whatsapp",
           to: "556792326246",
           text: { body: "AI response" },
-          context: {
-            message_id:
-              "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
-          },
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
       }),

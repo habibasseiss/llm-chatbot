@@ -3,7 +3,7 @@ import {
   Metadata,
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
-import { HandleIncomingMessage } from "@/usecases/HandleIncomingMessage";
+import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
 import { Request, Response } from "express";
 
 export class WebhookController {
