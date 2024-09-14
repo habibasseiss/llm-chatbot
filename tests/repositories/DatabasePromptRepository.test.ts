@@ -1,69 +1,86 @@
-import { Pool } from "pg";
+import migrate from "node-pg-migrate";
+import { Prompt, Role, Session } from "../../src/domain/entities/Prompt";
+import {
+  DatabaseConnection,
+  PostgresDatabaseConnection,
+} from "../../src/infrastructure/database/DatabaseConnection";
 import { DatabasePromptRepository } from "../../src/infrastructure/repositories/DatabasePromptRepository";
+import { PromptRepository } from "../../src/interfaces/repositories/PromptRepository";
 
-jest.mock("pg", () => {
-  const mPool = {
-    query: jest.fn(),
-    end: jest.fn(),
-  };
-  return { Pool: jest.fn(() => mPool) };
-});
+describe("Test PostgresMessageRepository", () => {
+  let databaseUrl: string;
+  let repository: PromptRepository;
+  let connection: DatabaseConnection;
 
-describe("PostgresMessageRepository", () => {
-  let repo: DatabasePromptRepository;
-  let pool: jest.Mocked<Pool>;
-
-  beforeEach(() => {
-    pool = new Pool() as jest.Mocked<Pool>;
-    repo = new DatabasePromptRepository("postgres://test");
+  beforeAll(async () => {
+    databaseUrl = process.env.TEST_DATABASE_URL!;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  beforeEach(async () => {
+    connection = new PostgresDatabaseConnection(databaseUrl);
+
+    await migrate({
+      databaseUrl: databaseUrl,
+      dir: "migrations",
+      direction: "up",
+      migrationsTable: "pgmigrations",
+      decamelize: true,
+      verbose: false,
+      log: () => {},
+    });
+
+    repository = new DatabasePromptRepository(connection);
   });
 
-  // it("should fetch chat history", async () => {
-  //   const mockMessages: ChatHistory = {
-  //     messages: [
-  //       {
-  //         id: "msg1",
-  //         role: "user",
-  //         content: "Hello",
-  //         user_id: "12345",
-  //         user_profile_name: "Test user",
-  //       },
-  //       {
-  //         id: "msg2",
-  //         role: "system",
-  //         content: "Hi",
-  //         user_id: "12345",
-  //         user_profile_name: "Test user",
-  //       },
-  //     ],
-  //   };
-  //   pool.query.mockResolvedValue({ rows: mockMessages });
+  afterEach(async () => {
+    await migrate({
+      databaseUrl: databaseUrl,
+      dir: "migrations",
+      direction: "down",
+      migrationsTable: "pgmigrations",
+      decamelize: true,
+      count: Infinity,
+      verbose: false,
+      log: () => {},
+    });
 
-  //   const result = await repo.getPromptHistory("12345");
-
-  //   expect(result).toHaveLength(2);
-  //   expect(result[0].id).toBe("msg1");
-  //   expect(result[0].text.body).toBe("Hello");
-  //   expect(result[1].id).toBe("msg2");
-  // });
+    await connection.close();
+  });
 
   it("should save a prompt", async () => {
     const prompt = {
-      role: "user",
       content: "Test message",
+      role: "user" as Role,
       user_id: "12345",
       user_profile_name: "Test user",
     };
 
-    await repo.savePrompt(prompt);
+    await repository.savePrompt(prompt);
 
-    expect(pool.query).toHaveBeenCalledWith(
-      `INSERT INTO prompts (content, role, user_id, user_profile_name) VALUES ($1, $2, $3, $4)`,
-      ["Test message", "user", "12345", "Test user"],
+    const sessions = await connection.query<Session[]>(
+      "SELECT * FROM sessions WHERE user_id = $1",
+      ["12345"],
     );
+    expect(sessions[0].user_profile_name).toBe("Test user");
+
+    const prompts = await connection.query<Prompt[]>(
+      "SELECT * FROM prompts WHERE session_id = $1",
+      [sessions[0].id],
+    );
+    expect(prompts).toHaveLength(1);
+  });
+
+  it("should get prompt history", async () => {
+    const prompt = {
+      content: "Test message",
+      role: "user" as Role,
+      user_id: "12345",
+      user_profile_name: "Test user",
+    };
+
+    await repository.savePrompt(prompt);
+    const chatHistory = await repository.getPromptHistory("12345");
+    expect(chatHistory.messages).toHaveLength(1);
+    expect(chatHistory.messages[0].content).toBe("Test message");
   });
 });

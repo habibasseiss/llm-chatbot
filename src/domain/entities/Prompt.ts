@@ -1,9 +1,16 @@
+export interface Session {
+  id: string;
+  user_id: string;
+  user_profile_name: string;
+  created_at: Date;
+}
+
 export interface Prompt {
   id: string;
   role: Role;
   content: string;
-  user_id: string;
-  user_profile_name: string;
+  session: Session;
+  created_at: Date;
 }
 
 export interface ChatHistory {

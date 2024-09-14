@@ -9,6 +9,7 @@ const config: JestConfigWithTsJest = {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   testEnvironment: "node",
+  setupFiles: ["dotenv/config"],
 };
 
 export default config;

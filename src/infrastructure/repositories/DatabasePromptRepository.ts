@@ -1,35 +1,42 @@
-import { ChatHistory } from "@/domain/entities/Prompt";
+import { ChatHistory, Session } from "@/domain/entities/Prompt";
+import { DatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
 import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
-import pg from "pg";
-
-const { Pool } = pg;
 
 export class DatabasePromptRepository implements PromptRepository {
-  private pool: pg.Pool;
-
-  constructor(connectionString: string) {
-    this.pool = new Pool({
-      connectionString,
-    });
+  constructor(readonly connection: DatabaseConnection) {
   }
 
   async getPromptHistory(userId: string): Promise<ChatHistory> {
     const query = `
-      SELECT *
-      FROM prompts 
-      WHERE user_id = $1
-      ORDER BY created_at ASC
+      SELECT
+        prompts.*,
+        sessions.id AS sessions_id,
+        sessions.user_id AS sessions_user_id,
+        sessions.user_profile_name AS sessions_user_profile_name,
+        sessions.created_at AS sessions_created_at
+      FROM
+        prompts
+        JOIN sessions AS sessions ON prompts.session_id = sessions.id
+      WHERE
+        user_id = '12345'
+      ORDER BY
+        prompts.created_at ASC
     `;
-    const result = await this.pool.query(query, [userId]);
+    const result = await this.connection.query<any[]>(query, [userId]);
 
     return {
       messages: [
-        ...result.rows.map((row) => ({
+        ...result.map((row) => ({
           id: row.id,
           content: row.content,
           role: row.role,
-          user_id: row.user_id,
-          user_profile_name: row.user_profile_name,
+          session: {
+            id: row.sessions_id,
+            user_id: row.sessions_user_id,
+            user_profile_name: row.sessions_user_profile_name,
+            created_at: row.sessions_created_at,
+          },
+          created_at: row.created_at,
         })),
       ],
     };
@@ -46,13 +53,19 @@ export class DatabasePromptRepository implements PromptRepository {
     user_id: string;
     user_profile_name?: string;
   }): Promise<void> {
-    const query =
-      `INSERT INTO prompts (content, role, user_id, user_profile_name) VALUES ($1, $2, $3, $4)`;
-    await this.pool.query(query, [
-      content,
-      role,
+    let query =
+      `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
+    const session = await this.connection.one<Session>(query, [
       user_id,
       user_profile_name,
+    ]);
+
+    query =
+      `INSERT INTO prompts (content, role, session_id) VALUES ($1, $2, $3)`;
+    await this.connection.query(query, [
+      content,
+      role,
+      session.id,
     ]);
   }
 }

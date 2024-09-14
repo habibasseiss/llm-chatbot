@@ -1,3 +1,4 @@
+import { PostgresDatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
 import { GroqAIGateway } from "@/infrastructure/gateways/GroqAIGateway";
 import { HttpAPIGateway } from "@/infrastructure/gateways/HttpAPIGateway";
 import { DatabasePromptRepository } from "@/infrastructure/repositories/DatabasePromptRepository";
@@ -11,9 +12,8 @@ const { GRAPH_API_TOKEN, GROQ_API_KEY, DATABASE_URL, API_URL, API_KEY } =
 
 const aiGateway = new GroqAIGateway(GROQ_API_KEY!);
 const apiGateway = new HttpAPIGateway(API_URL!, API_KEY!);
-const promptRepository = new DatabasePromptRepository(
-  DATABASE_URL!,
-);
+const pgDatabaseConnection = new PostgresDatabaseConnection(DATABASE_URL!);
+const promptRepository = new DatabasePromptRepository(pgDatabaseConnection);
 
 const handleIncomingMessage = new HandleIncomingMessage(
   GRAPH_API_TOKEN!,

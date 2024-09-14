@@ -9,19 +9,28 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createExtension('uuid-ossp', { ifNotExists: true });
-
+  
   pgm.createTable('prompts', {
-    id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
+    id: {
+      type: 'uuid',
+      primaryKey: true,
+      default: pgm.func('uuid_generate_v4()'),
+    },
     role: { type: 'text', notNull: true },
     content: { type: 'text', notNull: true },
-    userId: { type: 'string', notNull: true },
-    userProfileName: { type: 'string', notNull: false },
-    session: { type: 'text', notNull: false },
+    session_id: { type: 'uuid', notNull: true },
     createdAt: {
       type: 'timestamp',
       notNull: true,
       default: pgm.func('current_timestamp'),
+    },
+  });
+  pgm.addConstraint('prompts', 'fk_session_id', {
+    foreignKeys: {
+      columns: 'session_id',
+      references: 'sessions(id)',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
   });
 };
@@ -32,7 +41,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropConstraint('prompts', 'fk_session_id');
   pgm.dropTable('prompts');
-  
-  pgm.dropExtension('uuid-ossp', { ifExists: true });
 };
