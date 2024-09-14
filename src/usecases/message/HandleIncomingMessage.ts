@@ -3,9 +3,9 @@ import {
   Metadata,
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
+import { PromptRepository } from "@/domain/repositories/PromptRepository";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { APIGateway } from "@/interfaces/gateways/APIGateway";
-import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
 import UseCase from "@/usecases/UseCase";
 import axios from "axios";
 

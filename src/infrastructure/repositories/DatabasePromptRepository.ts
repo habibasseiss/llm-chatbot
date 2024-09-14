@@ -1,6 +1,6 @@
 import { ChatHistory, Session } from "@/domain/entities/Prompt";
+import { PromptRepository } from "@/domain/repositories/PromptRepository";
 import { DatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
-import { PromptRepository } from "@/interfaces/repositories/PromptRepository";
 
 export class DatabasePromptRepository implements PromptRepository {
   constructor(readonly connection: DatabaseConnection) {

@@ -1,9 +1,9 @@
 import axios from "axios";
 import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
 import { ChatHistory, Role } from "../../src/domain/entities/Prompt";
+import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
 import { APIGateway } from "../../src/interfaces/gateways/APIGateway";
-import { PromptRepository } from "../../src/interfaces/repositories/PromptRepository";
 import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
 // Mock axios to prevent actual HTTP requests

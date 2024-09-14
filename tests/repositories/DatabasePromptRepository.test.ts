@@ -1,11 +1,11 @@
 import migrate from "node-pg-migrate";
 import { Prompt, Role, Session } from "../../src/domain/entities/Prompt";
+import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
 import {
   DatabaseConnection,
   PostgresDatabaseConnection,
 } from "../../src/infrastructure/database/DatabaseConnection";
 import { DatabasePromptRepository } from "../../src/infrastructure/repositories/DatabasePromptRepository";
-import { PromptRepository } from "../../src/interfaces/repositories/PromptRepository";
 
 describe("Test PostgresMessageRepository", () => {
   let databaseUrl: string;
