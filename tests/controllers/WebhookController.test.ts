@@ -19,7 +19,7 @@ describe("WebhookController", () => {
       "mock-graph-api-token",
       { getAIResponse: jest.fn() },
       { getPromptHistory: jest.fn(), savePrompt: jest.fn() },
-      { getSystemPrompt: jest.fn() },
+      { getSettings: jest.fn() },
     );
 
     controller = new WebhookController(mockHandleIncomingMessage);

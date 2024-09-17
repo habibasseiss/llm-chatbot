@@ -22,6 +22,17 @@ describe("Test PostgresMessageRepository", () => {
     await migrate({
       databaseUrl: databaseUrl,
       dir: "migrations",
+      direction: "down",
+      migrationsTable: "pgmigrations",
+      decamelize: true,
+      count: Infinity,
+      verbose: false,
+      log: () => {},
+    });
+
+    await migrate({
+      databaseUrl: databaseUrl,
+      dir: "migrations",
       direction: "up",
       migrationsTable: "pgmigrations",
       decamelize: true,
@@ -33,17 +44,6 @@ describe("Test PostgresMessageRepository", () => {
   });
 
   afterEach(async () => {
-    await migrate({
-      databaseUrl: databaseUrl,
-      dir: "migrations",
-      direction: "down",
-      migrationsTable: "pgmigrations",
-      decamelize: true,
-      count: Infinity,
-      verbose: false,
-      log: () => {},
-    });
-
     await connection.close();
   });
 
@@ -70,17 +70,64 @@ describe("Test PostgresMessageRepository", () => {
     expect(prompts).toHaveLength(1);
   });
 
-  it("should get prompt history", async () => {
-    const prompt = {
+  it("should save different sessions if users are different", async () => {
+    const prompt1 = {
       content: "Test message",
       role: "user" as Role,
       user_id: "12345",
       user_profile_name: "Test user",
     };
 
-    await repository.savePrompt(prompt);
+    const prompt2 = {
+      content: "Test message",
+      role: "user" as Role,
+      user_id: "54321",
+      user_profile_name: "Test user",
+    };
+
+    await repository.savePrompt(prompt1);
+    await repository.savePrompt(prompt2);
+
+    const sessions = await connection.query<Session[]>(
+      "SELECT * FROM sessions",
+    );
+    expect(sessions).toHaveLength(2);
+  });
+
+  it("should get prompt history", async () => {
+    const prompt1 = {
+      content: "Test message",
+      role: "user" as Role,
+      user_id: "12345",
+      user_profile_name: "Test user",
+    };
+    const prompt2 = {
+      content: "Test message 2",
+      role: "user" as Role,
+      user_id: "12345",
+      user_profile_name: "Test user",
+    };
+
+    await repository.savePrompt(prompt1);
+    await repository.savePrompt(prompt2);
+
     const chatHistory = await repository.getPromptHistory("12345");
-    expect(chatHistory.messages).toHaveLength(1);
+    expect(chatHistory.messages).toHaveLength(2);
     expect(chatHistory.messages[0].content).toBe("Test message");
+
+    let sessions = await connection.query<Session[]>(
+      "SELECT * FROM sessions WHERE user_id = $1",
+      ["12345"],
+    );
+
+    expect(sessions).toHaveLength(1);
+
+    // save prompt with 0 expiration hours
+    await repository.savePrompt(prompt1, 0);
+    sessions = await connection.query<Session[]>(
+      "SELECT * FROM sessions WHERE user_id = $1",
+      ["12345"],
+    );
+    expect(sessions).toHaveLength(2);
   });
 });

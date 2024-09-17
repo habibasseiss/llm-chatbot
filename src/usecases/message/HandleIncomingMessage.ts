@@ -22,18 +22,18 @@ export class HandleIncomingMessage implements UseCase {
       const message: Message | undefined = webhookEvent?.messages?.[0];
       const metadata: Metadata | undefined = webhookEvent?.metadata;
       const userId = message.from;
+      const settings = await this.apiGateway.getSettings();
 
       await this.markMessageAsRead(message, metadata);
 
       let chatHistory = await this.promptRepository.getPromptHistory(userId);
       if (chatHistory.messages.length === 0) {
-        const systemPrompt = await this.apiGateway.getSystemPrompt();
         await this.promptRepository.savePrompt({
-          content: systemPrompt,
+          content: settings.system_prompt,
           role: "system",
           user_id: userId,
           user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-        });
+        }, settings.session_duration);
         chatHistory = await this.promptRepository.getPromptHistory(userId);
       }
 
@@ -42,7 +42,7 @@ export class HandleIncomingMessage implements UseCase {
         role: "user",
         user_id: userId,
         user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-      });
+      }, settings.session_duration);
 
       chatHistory = await this.promptRepository.getPromptHistory(userId);
 
@@ -53,7 +53,7 @@ export class HandleIncomingMessage implements UseCase {
         role: "assistant",
         user_id: userId,
         user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-      });
+      }, settings.session_duration);
 
       await this.sendReply(message, metadata, aiResponse);
     } catch (error) {

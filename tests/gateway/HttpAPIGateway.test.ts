@@ -14,12 +14,15 @@ describe("HttpAPIGateway", () => {
 
   it("should fetch system prompt from the external API", async () => {
     const mockResponse = {
-      data: { system_prompt: "This is the system prompt" },
+      data: {
+        system_prompt: "This is the system prompt",
+        session_duration: 24,
+      },
     };
     mockedAxios.get.mockResolvedValueOnce(mockResponse);
 
-    const prompt = await apiGateway.getSystemPrompt();
-    expect(prompt).toBe("This is the system prompt");
+    const settings = await apiGateway.getSettings();
+    expect(settings.system_prompt).toBe("This is the system prompt");
     expect(mockedAxios.get).toHaveBeenCalledWith(
       "http://api.example.com/settings",
       { "headers": { "X-Api-Key": "secret-key" } },
@@ -29,7 +32,7 @@ describe("HttpAPIGateway", () => {
   it("should throw an error if fetching the system prompt fails", async () => {
     mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
 
-    await expect(apiGateway.getSystemPrompt()).rejects.toThrow(
+    await expect(apiGateway.getSettings()).rejects.toThrow(
       "Failed to fetch system prompt",
     );
   });

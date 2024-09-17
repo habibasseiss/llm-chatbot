@@ -1,3 +1,8 @@
 export interface APIGateway {
-  getSystemPrompt(): Promise<string>;
+  getSettings(): Promise<GeneralSettings>;
 }
+
+export type GeneralSettings = {
+  system_prompt: string;
+  session_duration: number;
+};

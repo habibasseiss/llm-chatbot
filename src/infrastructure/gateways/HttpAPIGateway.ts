@@ -1,4 +1,4 @@
-import { APIGateway } from "@/interfaces/gateways/APIGateway";
+import { APIGateway, GeneralSettings } from "@/interfaces/gateways/APIGateway";
 import axios from "axios";
 
 export class HttpAPIGateway implements APIGateway {
@@ -10,22 +10,17 @@ export class HttpAPIGateway implements APIGateway {
     this.apiKey = apiKey;
   }
 
-  async getSystemPrompt(): Promise<string> {
+  async getSettings(): Promise<GeneralSettings> {
     try {
       const response = await axios.get(`${this.apiUrl}/settings`, {
         headers: {
           "X-Api-Key": this.apiKey,
         },
       });
-      const settings = response.data as GeneralSettings;
-      return settings.system_prompt;
+      return response.data as GeneralSettings;
     } catch (error) {
       console.error("Error fetching system prompt:", error);
       throw new Error("Failed to fetch system prompt");
     }
   }
 }
-
-type GeneralSettings = {
-  system_prompt: string;
-};

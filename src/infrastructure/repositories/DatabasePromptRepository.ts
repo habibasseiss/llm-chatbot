@@ -18,7 +18,7 @@ export class DatabasePromptRepository implements PromptRepository {
         prompts
         JOIN sessions AS sessions ON prompts.session_id = sessions.id
       WHERE
-        user_id = '12345'
+        user_id = $1
       ORDER BY
         prompts.created_at ASC
     `;
@@ -52,13 +52,27 @@ export class DatabasePromptRepository implements PromptRepository {
     role: string;
     user_id: string;
     user_profile_name?: string;
-  }): Promise<void> {
+  }, expiration_hours: number = 24): Promise<void> {
+    // get the session for user_id or create a new one if expiration_hours has passed
     let query =
-      `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
-    const session = await this.connection.one<Session>(query, [
+      `SELECT * FROM sessions WHERE user_id = $1 AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
+    const sessions = await this.connection.query<Session[]>(query, [
       user_id,
-      user_profile_name,
     ]);
+    let session: Session;
+
+    if (sessions.length === 0) {
+      // If no session exists, create a new one
+      query =
+        `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
+      session = await this.connection.one<Session>(query, [
+        user_id,
+        user_profile_name,
+      ]);
+    } else {
+      // If a session exists, use the first one
+      session = sessions[0];
+    }
 
     query =
       `INSERT INTO prompts (content, role, session_id) VALUES ($1, $2, $3)`;

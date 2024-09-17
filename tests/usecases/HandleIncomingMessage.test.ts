@@ -3,7 +3,10 @@ import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
 import { ChatHistory, Role } from "../../src/domain/entities/Prompt";
 import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
-import { APIGateway } from "../../src/interfaces/gateways/APIGateway";
+import {
+  APIGateway,
+  GeneralSettings,
+} from "../../src/interfaces/gateways/APIGateway";
 import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
 // Mock axios to prevent actual HTTP requests
@@ -17,8 +20,11 @@ class MockAIGateway implements AIGateway {
 }
 
 class MockAPIGateway implements APIGateway {
-  async getSystemPrompt(): Promise<string> {
-    return `System prompt`;
+  async getSettings(): Promise<GeneralSettings> {
+    return {
+      system_prompt: "system prompt",
+      session_duration: 24,
+    };
   }
 }
 
@@ -92,6 +98,13 @@ describe("HandleIncomingMessage", () => {
         },
       ],
     };
+  });
+
+  it("should store prompt", async () => {
+    await handleIncomingMessage.execute(webhookEvent);
+
+    const chatHistory = await promptRepository.getPromptHistory("556792326246");
+    expect(chatHistory.messages.length).toBe(3); // system prompt, user message, AI response
   });
 
   it("should send a reply with AI response", async () => {
