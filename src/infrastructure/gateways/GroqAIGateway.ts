@@ -9,13 +9,16 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  async getAIResponse(chatHistory: ChatHistory): Promise<string> {
+  async getAIResponse(
+    chatHistory: ChatHistory,
+    llmModel?: string,
+  ): Promise<string> {
     const response = await this.groq.chat.completions.create({
       messages: chatHistory.messages.map((message) => ({
         role: message.role,
         content: message.content,
       })),
-      model: "llama-3.1-8b-instant",
+      model: llmModel || "llama-3.1-8b-instant",
     });
 
     return response.choices[0]?.message?.content || "";

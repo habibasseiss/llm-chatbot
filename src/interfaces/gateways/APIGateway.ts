@@ -5,4 +5,5 @@ export interface APIGateway {
 export type GeneralSettings = {
   system_prompt: string;
   session_duration: number;
+  llm_model: string;
 };

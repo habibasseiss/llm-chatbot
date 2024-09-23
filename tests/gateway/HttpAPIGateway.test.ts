@@ -17,6 +17,7 @@ describe("HttpAPIGateway", () => {
       data: {
         system_prompt: "This is the system prompt",
         session_duration: 24,
+        llm_model: "model-id",
       },
     };
     mockedAxios.get.mockResolvedValueOnce(mockResponse);

@@ -46,7 +46,10 @@ export class HandleIncomingMessage implements UseCase {
 
       chatHistory = await this.promptRepository.getPromptHistory(userId);
 
-      const aiResponse = await this.aiGateway.getAIResponse(chatHistory);
+      const aiResponse = await this.aiGateway.getAIResponse(
+        chatHistory,
+        settings.llm_model,
+      );
 
       await this.promptRepository.savePrompt({
         content: aiResponse,

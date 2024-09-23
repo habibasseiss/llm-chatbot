@@ -24,6 +24,7 @@ class MockAPIGateway implements APIGateway {
     return {
       system_prompt: "system prompt",
       session_duration: 24,
+      llm_model: "model-id",
     };
   }
 }
