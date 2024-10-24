@@ -6,26 +6,42 @@ export class DatabasePromptRepository implements PromptRepository {
   constructor(readonly connection: DatabaseConnection) {
   }
 
-  async closeSession(
+  async getSessionId(
     userId: string,
+    userProfileName?: string,
     expiration_hours: number = 24,
-  ): Promise<void> {
-    // get the session for userId
+  ): Promise<string> {
+    // get the session for user_id or create a new one if expiration_hours has passed
     let query =
-      `SELECT * FROM sessions WHERE user_id = $1 AND created_at > NOW() - INTERVAL '${expiration_hours} hours' ORDER BY created_at DESC`;
+      `SELECT * FROM sessions WHERE user_id = $1 AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
     const sessions = await this.connection.query<Session[]>(query, [
       userId,
     ]);
+    let session: Session;
 
-    if (sessions.length !== 0) {
-      const session = sessions[0];
-
-      query = `UPDATE sessions SET closed = true WHERE id = $1`;
-      await this.connection.query(query, [session.id]);
+    if (sessions.length === 0) {
+      // If no session exists, create a new one
+      query =
+        `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
+      session = await this.connection.one<Session>(query, [
+        userId,
+        userProfileName,
+      ]);
+    } else {
+      // If a session exists, use the first one
+      session = sessions[0];
     }
+
+    return session.id;
   }
 
-  async getPromptHistory(userId: string): Promise<ChatHistory> {
+  async closeSession(sessionId: string): Promise<void> {
+    const query = `UPDATE sessions SET closed = true WHERE id = $1`;
+
+    await this.connection.query(query, [sessionId]);
+  }
+
+  async getPromptHistory(sessionId: string): Promise<ChatHistory> {
     const query = `
       SELECT
         prompts.*,
@@ -37,11 +53,11 @@ export class DatabasePromptRepository implements PromptRepository {
         prompts
         JOIN sessions AS sessions ON prompts.session_id = sessions.id
       WHERE
-        user_id = $1
+        sessions.id = $1
       ORDER BY
         prompts.created_at ASC
     `;
-    const result = await this.connection.query<any[]>(query, [userId]);
+    const result = await this.connection.query<any[]>(query, [sessionId]);
 
     return {
       messages: [
@@ -64,41 +80,18 @@ export class DatabasePromptRepository implements PromptRepository {
   async savePrompt({
     content,
     role,
-    user_id,
-    user_profile_name,
+    sessionId,
   }: {
     content: string;
     role: string;
-    user_id: string;
-    user_profile_name?: string;
-  }, expiration_hours: number = 24): Promise<void> {
-    // get the session for user_id or create a new one if expiration_hours has passed
-    let query =
-      `SELECT * FROM sessions WHERE user_id = $1 AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
-    const sessions = await this.connection.query<Session[]>(query, [
-      user_id,
-    ]);
-    let session: Session;
-
-    if (sessions.length === 0) {
-      // If no session exists, create a new one
-      query =
-        `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
-      session = await this.connection.one<Session>(query, [
-        user_id,
-        user_profile_name,
-      ]);
-    } else {
-      // If a session exists, use the first one
-      session = sessions[0];
-    }
-
-    query =
+    sessionId: string;
+  }): Promise<void> {
+    const query =
       `INSERT INTO prompts (content, role, session_id) VALUES ($1, $2, $3)`;
     await this.connection.query(query, [
       content,
       role,
-      session.id,
+      sessionId,
     ]);
   }
 }

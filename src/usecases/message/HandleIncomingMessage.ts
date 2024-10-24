@@ -26,49 +26,58 @@ export class HandleIncomingMessage implements UseCase {
 
       await this.markMessageAsRead(message, metadata);
 
-      let chatHistory = await this.promptRepository.getPromptHistory(userId);
-      // If it's the first interaction, store the system prompt
+      // Initially, get the session id for the user. If the session has expired
+      // or doesn't exist, it already creates a new one, so we always get an id.
+      const sessionId = await this.promptRepository.getSessionId(
+        userId,
+        webhookEvent?.contacts[0]?.profile?.name,
+        settings.session_duration,
+      );
+
+      // Get the prompt history, and if it's the first interaction, store the
+      // system prompt as the first message in the session
+      let chatHistory = await this.promptRepository.getPromptHistory(sessionId);
       if (chatHistory.messages.length === 0) {
         await this.promptRepository.savePrompt({
           content: settings.system_prompt,
           role: "system",
-          user_id: userId,
-          user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-        }, settings.session_duration);
-        chatHistory = await this.promptRepository.getPromptHistory(userId);
+          sessionId: sessionId,
+        });
       }
 
+      // Save the user interaction
       await this.promptRepository.savePrompt({
         content: message.text!.body,
         role: "user",
-        user_id: userId,
-        user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-      }, settings.session_duration);
+        sessionId: sessionId,
+      });
 
-      chatHistory = await this.promptRepository.getPromptHistory(userId);
+      // Get all the chat history for the current session
+      chatHistory = await this.promptRepository.getPromptHistory(sessionId);
 
+      // Get the AI response and check if it's the final response
       let aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
         settings.llm_model,
       );
       const isFinalResponse = this.aiGateway.isFinalResponse(aiResponse);
 
+      // Parse the AI response, removing any metadata like [closed]
       aiResponse = this.aiGateway.parseResponse(aiResponse);
 
+      // Save the AI response as assistant in the chat history
       await this.promptRepository.savePrompt({
         content: aiResponse,
         role: "assistant",
-        user_id: userId,
-        user_profile_name: webhookEvent?.contacts[0]?.profile?.name,
-      }, settings.session_duration);
+        sessionId: sessionId,
+      });
 
+      // Send the response to the user
       await this.sendReply(message, metadata, aiResponse);
 
+      // If it's the final response, close the session
       if (isFinalResponse) {
-        await this.promptRepository.closeSession(
-          userId,
-          settings.session_duration,
-        );
+        await this.promptRepository.closeSession(sessionId);
       }
     } catch (error) {
       console.log(error);

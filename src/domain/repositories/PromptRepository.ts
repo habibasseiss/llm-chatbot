@@ -1,15 +1,21 @@
 import { ChatHistory, Role } from "@/domain/entities/Prompt";
 
 export interface PromptRepository {
-  getPromptHistory(userId: string): Promise<ChatHistory>;
+  getSessionId(
+    userId: string,
+    userProfileName: string,
+    expiration_hours?: number,
+  ): Promise<string>;
+
+  getPromptHistory(sessionId: string): Promise<ChatHistory>;
+
   savePrompt(
     promptData: {
       content: string;
       role: Role;
-      user_id: string;
-      user_profile_name?: string;
+      sessionId: string;
     },
-    expiration_hours?: number,
   ): Promise<void>;
-  closeSession(userId: string, expiration_hours?: number): Promise<void>;
+
+  closeSession(sessionId: string): Promise<void>;
 }

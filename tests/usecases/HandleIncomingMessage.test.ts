@@ -1,6 +1,6 @@
 import axios from "axios";
 import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
-import { ChatHistory, Role } from "../../src/domain/entities/Prompt";
+import { ChatHistory } from "../../src/domain/entities/Prompt";
 import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
 import {
@@ -8,12 +8,19 @@ import {
   GeneralSettings,
 } from "../../src/interfaces/gateways/APIGateway";
 import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
+import { MockPromptRepository } from "../repositories/MockPromptRepository";
 
 // Mock axios to prevent actual HTTP requests
 jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 class MockAIGateway implements AIGateway {
+  isFinalResponse(response: string): boolean {
+    return response.includes("[closed]");
+  }
+  parseResponse(response: string): string {
+    return response;
+  }
   async getAIResponse(chatHistory: ChatHistory): Promise<string> {
     return `AI response`;
   }
@@ -26,32 +33,6 @@ class MockAPIGateway implements APIGateway {
       session_duration: 24,
       llm_model: "model-id",
     };
-  }
-}
-
-export class MockPromptRepository implements PromptRepository {
-  private prompts: { [key: string]: any } = {};
-
-  async getPromptHistory(userId: string): Promise<ChatHistory> {
-    return { messages: this.prompts[userId] || [] };
-  }
-
-  async savePrompt({
-    content,
-    role,
-    user_id,
-    user_profile_name,
-  }: {
-    content: string;
-    role: Role;
-    user_id: string;
-    user_profile_name: string;
-  }): Promise<void> {
-    const prompt = { content, role, user_id, user_profile_name };
-    if (!this.prompts[prompt.user_id]) {
-      this.prompts[prompt.user_id] = [];
-    }
-    this.prompts[prompt.user_id].push(prompt);
   }
 }
 
@@ -104,7 +85,11 @@ describe("HandleIncomingMessage", () => {
   it("should store prompt", async () => {
     await handleIncomingMessage.execute(webhookEvent);
 
-    const chatHistory = await promptRepository.getPromptHistory("556792326246");
+    const sessionId = await promptRepository.getSessionId(
+      "556792326246",
+      "Habib",
+    );
+    const chatHistory = await promptRepository.getPromptHistory(sessionId);
     expect(chatHistory.messages.length).toBe(3); // system prompt, user message, AI response
   });
 

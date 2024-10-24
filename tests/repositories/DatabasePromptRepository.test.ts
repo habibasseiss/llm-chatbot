@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import migrate from "node-pg-migrate";
 import { Prompt, Role, Session } from "../../src/domain/entities/Prompt";
 import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
@@ -48,11 +49,12 @@ describe("Test PostgresMessageRepository", () => {
   });
 
   it("should save a prompt", async () => {
+    const sessionId = await repository.getSessionId("12345", "Test user");
+
     const prompt = {
       content: "Test message",
       role: "user" as Role,
-      user_id: "12345",
-      user_profile_name: "Test user",
+      sessionId: sessionId,
     };
 
     await repository.savePrompt(prompt);
@@ -70,63 +72,57 @@ describe("Test PostgresMessageRepository", () => {
     expect(prompts).toHaveLength(1);
   });
 
-  it("should save different sessions if users are different", async () => {
-    const prompt1 = {
-      content: "Test message",
-      role: "user" as Role,
-      user_id: "12345",
-      user_profile_name: "Test user",
-    };
-
-    const prompt2 = {
-      content: "Test message",
-      role: "user" as Role,
-      user_id: "54321",
-      user_profile_name: "Test user",
-    };
-
-    await repository.savePrompt(prompt1);
-    await repository.savePrompt(prompt2);
+  it("should have different sessions if users are different", async () => {
+    const sessionId = await repository.getSessionId("12345", "Test user");
+    const sessionId2 = await repository.getSessionId("54321", "Test user");
 
     const sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions",
     );
     expect(sessions).toHaveLength(2);
+    expect(sessionId).not.toBe(sessionId2);
   });
 
   it("should get prompt history", async () => {
+    const uuid = randomUUID();
+    const sessionId = await repository.getSessionId(uuid, "Test user");
+
     const prompt1 = {
       content: "Test message",
       role: "user" as Role,
-      user_id: "12345",
-      user_profile_name: "Test user",
+      sessionId: sessionId,
     };
     const prompt2 = {
       content: "Test message 2",
       role: "user" as Role,
-      user_id: "12345",
-      user_profile_name: "Test user",
+      sessionId: sessionId,
     };
 
     await repository.savePrompt(prompt1);
     await repository.savePrompt(prompt2);
 
-    const chatHistory = await repository.getPromptHistory("12345");
+    const chatHistory = await repository.getPromptHistory(sessionId);
     expect(chatHistory.messages).toHaveLength(2);
     expect(chatHistory.messages[0].content).toBe("Test message");
 
     let sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions WHERE user_id = $1",
-      ["12345"],
+      [uuid],
     );
 
     expect(sessions).toHaveLength(1);
 
-    // save prompt with 0 expiration hours
-    await repository.savePrompt(prompt1, 0);
+    // get session with 0 expiration hours (should return have a new session)
+    const sessionId2 = await repository.getSessionId(uuid, "Test user", 0);
+    const prompt3 = {
+      content: "Test message 2",
+      role: "user" as Role,
+      sessionId: sessionId2,
+    };
+    await repository.savePrompt(prompt3);
     sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions WHERE user_id = $1",
-      ["12345"],
+      [uuid],
     );
     expect(sessions).toHaveLength(2);
   });
