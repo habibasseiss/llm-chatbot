@@ -11,4 +11,5 @@ export interface PromptRepository {
     },
     expiration_hours?: number,
   ): Promise<void>;
+  closeSession(userId: string, expiration_hours?: number): Promise<void>;
 }

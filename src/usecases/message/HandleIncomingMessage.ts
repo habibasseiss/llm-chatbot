@@ -27,6 +27,7 @@ export class HandleIncomingMessage implements UseCase {
       await this.markMessageAsRead(message, metadata);
 
       let chatHistory = await this.promptRepository.getPromptHistory(userId);
+      // If it's the first interaction, store the system prompt
       if (chatHistory.messages.length === 0) {
         await this.promptRepository.savePrompt({
           content: settings.system_prompt,
@@ -46,10 +47,13 @@ export class HandleIncomingMessage implements UseCase {
 
       chatHistory = await this.promptRepository.getPromptHistory(userId);
 
-      const aiResponse = await this.aiGateway.getAIResponse(
+      let aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
         settings.llm_model,
       );
+      const isFinalResponse = this.aiGateway.isFinalResponse(aiResponse);
+
+      aiResponse = this.aiGateway.parseResponse(aiResponse);
 
       await this.promptRepository.savePrompt({
         content: aiResponse,
@@ -59,6 +63,13 @@ export class HandleIncomingMessage implements UseCase {
       }, settings.session_duration);
 
       await this.sendReply(message, metadata, aiResponse);
+
+      if (isFinalResponse) {
+        await this.promptRepository.closeSession(
+          userId,
+          settings.session_duration,
+        );
+      }
     } catch (error) {
       console.log(error);
     }

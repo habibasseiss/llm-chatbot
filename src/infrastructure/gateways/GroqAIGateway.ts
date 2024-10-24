@@ -9,6 +9,14 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
+  isFinalResponse(response: string): boolean {
+    return response.includes("[closed]");
+  }
+
+  parseResponse(response: string): string {
+    return response.replace(/\[.*\]/, "").trim();
+  }
+
   async getAIResponse(
     chatHistory: ChatHistory,
     llmModel?: string,
