@@ -14,7 +14,7 @@ export class GroqAIGateway implements AIGateway {
   }
 
   parseResponse(response: string): string {
-    return response.replace(/\[.*\]/, "").trim();
+    return response.replace(/\[.*?\]\s*/, "").trim();
   }
 
   async getAIResponse(

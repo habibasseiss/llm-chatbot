@@ -12,8 +12,12 @@ export class DatabasePromptRepository implements PromptRepository {
     expiration_hours: number = 24,
   ): Promise<string> {
     // get the session for user_id or create a new one if expiration_hours has passed
-    let query =
-      `SELECT * FROM sessions WHERE user_id = $1 AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
+    let query = `SELECT * FROM sessions
+      WHERE
+        user_id = $1
+        AND closed = false
+        AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
+
     const sessions = await this.connection.query<Session[]>(query, [
       userId,
     ]);
