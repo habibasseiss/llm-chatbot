@@ -78,7 +78,7 @@ export class HandleIncomingMessage implements UseCase {
       // If it's the final response, close the session
       if (isFinalResponse) {
         // Request another prompt to AI and ask for a summary in json format
-        const summary = await this.aiGateway.getFinalAIResponse(
+        const summary = await this.aiGateway.getFinalAISummary(
           aiResponse,
           settings.llm_model,
         );

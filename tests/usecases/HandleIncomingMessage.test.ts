@@ -21,8 +21,11 @@ class MockAIGateway implements AIGateway {
   ): Promise<string> {
     return `AI response`;
   }
-  async getFinalAIResponse(
-    prompt: string,
+  async getFinalAISummary(prompt: string, llmModel?: string): Promise<string> {
+    return `AI response`;
+  }
+  async getPartialAISummary(
+    chatHistory: ChatHistory,
     llmModel?: string,
   ): Promise<string> {
     return `AI response`;

@@ -42,7 +42,7 @@ export class DatabasePromptRepository implements PromptRepository {
   async closeSession(sessionId: string, summary?: string): Promise<void> {
     if (summary) {
       const query =
-        `UPDATE sessions SET closed = true, summary = $2 WHERE id = $1`;
+        `UPDATE sessions SET closed = true, summary = $2 WHERE id = $1 AND summary IS NULL`;
 
       await this.connection.query(query, [sessionId, summary]);
     } else {

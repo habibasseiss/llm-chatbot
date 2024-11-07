@@ -5,6 +5,11 @@ import { DatabasePromptRepository } from "@/infrastructure/repositories/Database
 import { ExpressServer } from "@/infrastructure/webserver/ExpressServer";
 import { WebhookController } from "@/interfaces/controllers/WebhookController";
 import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
+import dotenv from "dotenv";
+import { ApiController } from "./interfaces/controllers/ApiController";
+import { HandleChatSession } from "./usecases/message/HandleChatSession";
+
+dotenv.config();
 
 const PORT = 3000;
 const { GRAPH_API_TOKEN, GROQ_API_KEY, DATABASE_URL, API_URL, API_KEY } =
@@ -21,8 +26,14 @@ const handleIncomingMessage = new HandleIncomingMessage(
   promptRepository,
   apiGateway,
 );
+const handleChatSession = new HandleChatSession(
+  aiGateway,
+  promptRepository,
+  apiGateway,
+);
 
 const webhookController = new WebhookController(handleIncomingMessage);
-const server = new ExpressServer(webhookController);
+const apiController = new ApiController(handleChatSession);
+const server = new ExpressServer(webhookController, apiController);
 
 server.start(PORT);
