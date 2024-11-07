@@ -77,7 +77,13 @@ export class HandleIncomingMessage implements UseCase {
 
       // If it's the final response, close the session
       if (isFinalResponse) {
-        await this.promptRepository.closeSession(sessionId);
+        // Request another prompt to AI and ask for a summary in json format
+        const summary = await this.aiGateway.getFinalAIResponse(
+          aiResponse,
+          settings.llm_model,
+        );
+
+        await this.promptRepository.closeSession(sessionId, summary);
       }
     } catch (error) {
       console.log(error);

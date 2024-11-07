@@ -19,6 +19,7 @@ describe("WebhookController", () => {
       "mock-graph-api-token",
       {
         getAIResponse: jest.fn(),
+        getFinalAIResponse: jest.fn(),
         isFinalResponse: jest.fn(),
         parseResponse: jest.fn(),
       },

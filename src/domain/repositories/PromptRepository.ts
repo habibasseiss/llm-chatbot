@@ -17,5 +17,5 @@ export interface PromptRepository {
     },
   ): Promise<void>;
 
-  closeSession(sessionId: string): Promise<void>;
+  closeSession(sessionId: string, summary?: string): Promise<void>;
 }

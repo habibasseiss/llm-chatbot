@@ -39,10 +39,17 @@ export class DatabasePromptRepository implements PromptRepository {
     return session.id;
   }
 
-  async closeSession(sessionId: string): Promise<void> {
-    const query = `UPDATE sessions SET closed = true WHERE id = $1`;
+  async closeSession(sessionId: string, summary?: string): Promise<void> {
+    if (summary) {
+      const query =
+        `UPDATE sessions SET closed = true, summary = $2 WHERE id = $1`;
 
-    await this.connection.query(query, [sessionId]);
+      await this.connection.query(query, [sessionId, summary]);
+    } else {
+      const query = `UPDATE sessions SET closed = true WHERE id = $1`;
+
+      await this.connection.query(query, [sessionId]);
+    }
   }
 
   async getPromptHistory(sessionId: string): Promise<ChatHistory> {

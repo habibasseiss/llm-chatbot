@@ -15,14 +15,23 @@ jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 class MockAIGateway implements AIGateway {
+  async getAIResponse(
+    chatHistory: ChatHistory,
+    llmModel?: string,
+  ): Promise<string> {
+    return `AI response`;
+  }
+  async getFinalAIResponse(
+    prompt: string,
+    llmModel?: string,
+  ): Promise<string> {
+    return `AI response`;
+  }
   isFinalResponse(response: string): boolean {
     return response.includes("[closed]");
   }
   parseResponse(response: string): string {
     return response;
-  }
-  async getAIResponse(chatHistory: ChatHistory): Promise<string> {
-    return `AI response`;
   }
 }
 

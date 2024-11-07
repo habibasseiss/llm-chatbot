@@ -3,6 +3,11 @@ import { ChatHistory } from "@/domain/entities/Prompt";
 export interface AIGateway {
   getAIResponse(chatHistory: ChatHistory, llmModel?: string): Promise<string>;
 
+  getFinalAIResponse(
+    prompt: string,
+    llmModel?: string,
+  ): Promise<string>;
+
   /// Returns true if the response is the final response in the conversation,
   /// i.e. contains [closed] in the response.
   isFinalResponse(response: string): boolean;
