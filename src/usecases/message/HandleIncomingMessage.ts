@@ -26,6 +26,13 @@ export class HandleIncomingMessage implements UseCase {
       const userId = message.from;
       const settings = await this.apiGateway.getSettings();
 
+      let messageContent = "";
+      if (message.type == "interactive") {
+        messageContent = message.interactive?.button_reply?.title ?? "";
+      } else {
+        messageContent = message.text?.body ?? "";
+      }
+
       await this.markMessageAsRead(message, metadata);
 
       // Initially, get the session id for the user. If the session has expired
@@ -49,7 +56,7 @@ export class HandleIncomingMessage implements UseCase {
 
       // Save the user interaction
       await this.promptRepository.savePrompt({
-        content: message.text!.body,
+        content: messageContent,
         role: "user",
         sessionId: sessionId,
       });
