@@ -105,8 +105,6 @@ export class HandleIncomingMessage implements UseCase {
     aiResponse: string,
     optionList?: OptionList,
   ) {
-    const type = optionList?.options ? "interactive" : "text";
-
     await axios({
       method: "POST",
       url:
@@ -117,9 +115,9 @@ export class HandleIncomingMessage implements UseCase {
       data: {
         messaging_product: "whatsapp",
         to: message.from,
-        type: type,
-        text: type == "text" ? { body: aiResponse } : undefined,
-        interactive: type == "interactive"
+        type: message.type,
+        text: message.type == "text" ? { body: aiResponse } : undefined,
+        interactive: message.type == "interactive" && optionList?.options
           ? {
             type: "button",
             body: { text: aiResponse },

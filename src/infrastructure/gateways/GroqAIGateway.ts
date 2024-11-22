@@ -30,7 +30,8 @@ export class GroqAIGateway implements AIGateway {
     const multipleEmptyLinesRegex = /\n{2,}/g;
     replyText = replyText.replace(multipleEmptyLinesRegex, "\n\n").trim();
 
-    let llmText = response.replace(multipleEmptyLinesRegex, "\n\n").trim();
+    let llmText = replyText.replace(standaloneTagRegex, "");
+    llmText = llmText.replace(multipleEmptyLinesRegex, "\n\n").trim();
 
     return [replyText, llmText, isFinalResponse, { options: optionList }];
   }
