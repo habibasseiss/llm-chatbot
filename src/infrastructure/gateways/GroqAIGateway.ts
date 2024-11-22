@@ -1,3 +1,4 @@
+import { OptionList } from "@/domain/entities/Message";
 import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import Groq from "groq-sdk";
@@ -9,12 +10,16 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  isFinalResponse(response: string): boolean {
-    return response.includes("[closed]");
-  }
+  parseResponse(response: string): [string, boolean, OptionList] {
+    const isFinalResponse = response.includes("[closed]");
+    const cleanedResponse = response.replace(/\[.*\]\s*/, "").trim();
 
-  parseResponse(response: string): string {
-    return response.replace(/\[.*?\]\s*/, "").trim();
+    const regex = /\[options\]([\s\S]*?)\[\/options\]/;
+    const match = response.match(regex);
+    const optionsText = match ? match[1].trim() : null;
+    const optionList = optionsText?.split(/\r?\n/) ?? [];
+
+    return [cleanedResponse, isFinalResponse, { options: optionList }];
   }
 
   async getAIResponse(

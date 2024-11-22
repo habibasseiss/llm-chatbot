@@ -36,3 +36,9 @@ export interface Message {
 export interface Text {
   body: string;
 }
+
+// Custom data for Interactive Messages
+// https://developers.facebook.com/docs/whatsapp/guides/interactive-messages/
+export interface OptionList {
+  options: string[];
+}

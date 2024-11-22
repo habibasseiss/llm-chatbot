@@ -1,6 +1,7 @@
 import {
   Message,
   Metadata,
+  OptionList,
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
 import { PromptRepository } from "@/domain/repositories/PromptRepository";
@@ -8,6 +9,7 @@ import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { APIGateway } from "@/interfaces/gateways/APIGateway";
 import UseCase from "@/usecases/UseCase";
 import axios from "axios";
+import slugify from "slugify";
 
 export class HandleIncomingMessage implements UseCase {
   constructor(
@@ -56,30 +58,30 @@ export class HandleIncomingMessage implements UseCase {
       chatHistory = await this.promptRepository.getPromptHistory(sessionId);
 
       // Get the AI response and check if it's the final response
-      let aiResponse = await this.aiGateway.getAIResponse(
+      const aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
         settings.llm_model,
       );
-      const isFinalResponse = this.aiGateway.isFinalResponse(aiResponse);
 
       // Parse the AI response, removing any metadata like [closed]
-      aiResponse = this.aiGateway.parseResponse(aiResponse);
+      let [cleanedResponse, isFinalResponse, optionList] = this.aiGateway
+        .parseResponse(aiResponse);
 
       // Save the AI response as assistant in the chat history
       await this.promptRepository.savePrompt({
-        content: aiResponse,
+        content: cleanedResponse,
         role: "assistant",
         sessionId: sessionId,
       });
 
       // Send the response to the user
-      await this.sendReply(message, metadata, aiResponse);
+      await this.sendReply(message, metadata, cleanedResponse, optionList);
 
       // If it's the final response, close the session
       if (isFinalResponse) {
         // Request another prompt to AI and ask for a summary in json format
         const summary = await this.aiGateway.getFinalAISummary(
-          aiResponse,
+          cleanedResponse,
           settings.llm_model,
         );
 
@@ -94,7 +96,10 @@ export class HandleIncomingMessage implements UseCase {
     message: Message,
     metadata: Metadata,
     aiResponse: string,
+    optionList?: OptionList,
   ) {
+    const type = optionList?.options ? "interactive" : "text";
+
     await axios({
       method: "POST",
       url:
@@ -105,7 +110,23 @@ export class HandleIncomingMessage implements UseCase {
       data: {
         messaging_product: "whatsapp",
         to: message.from,
-        text: { body: aiResponse },
+        type: type,
+        text: type == "text" ? { body: aiResponse } : undefined,
+        interactive: type == "interactive"
+          ? {
+            type: "button",
+            body: aiResponse,
+            action: {
+              buttons: optionList?.options?.map((option) => ({
+                type: "reply",
+                reply: {
+                  id: slugify(option),
+                  title: option,
+                },
+              })),
+            },
+          }
+          : undefined,
       },
     });
   }
