@@ -12,14 +12,25 @@ export class GroqAIGateway implements AIGateway {
 
   parseResponse(response: string): [string, boolean, OptionList] {
     const isFinalResponse = response.includes("[closed]");
-    const cleanedResponse = response.replace(/\[.*\]\s*/, "").trim();
 
     const regex = /\[options\]([\s\S]*?)\[\/options\]/;
     const match = response.match(regex);
     const optionsText = match ? match[1].trim() : null;
     const optionList = optionsText?.split(/\r?\n/) ?? [];
 
-    return [cleanedResponse, isFinalResponse, { options: optionList }];
+    // Remove content between matching start and end tags like [options] and [/options]
+    const contentBetweenTagsRegex = /\[[^\]]+\][\s\S]*?\[\/[^\]]+\]/g;
+    let text = response.replace(contentBetweenTagsRegex, "");
+
+    // Remove any standalone tags like [closed]
+    const standaloneTagRegex = /\[[^\]]+\]/g;
+    text = text.replace(standaloneTagRegex, "");
+
+    // Replace two or more consecutive newline characters with a single newline
+    const multipleEmptyLinesRegex = /\n{2,}/g;
+    text = text.replace(multipleEmptyLinesRegex, "\n\n").trim();
+
+    return [text, isFinalResponse, { options: optionList }];
   }
 
   async getAIResponse(

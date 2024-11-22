@@ -115,7 +115,7 @@ export class HandleIncomingMessage implements UseCase {
         interactive: type == "interactive"
           ? {
             type: "button",
-            body: aiResponse,
+            body: { text: aiResponse },
             action: {
               buttons: optionList?.options?.map((option) => ({
                 type: "reply",
