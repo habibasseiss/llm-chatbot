@@ -71,24 +71,24 @@ export class HandleIncomingMessage implements UseCase {
       );
 
       // Parse the AI response, removing any metadata like [closed]
-      let [cleanedResponse, isFinalResponse, optionList] = this.aiGateway
+      let [responseText, llmText, isFinalResponse, optionList] = this.aiGateway
         .parseResponse(aiResponse);
 
       // Save the AI response as assistant in the chat history
       await this.promptRepository.savePrompt({
-        content: cleanedResponse,
+        content: llmText,
         role: "assistant",
         sessionId: sessionId,
       });
 
       // Send the response to the user
-      await this.sendReply(message, metadata, cleanedResponse, optionList);
+      await this.sendReply(message, metadata, responseText, optionList);
 
       // If it's the final response, close the session
       if (isFinalResponse) {
         // Request another prompt to AI and ask for a summary in json format
         const summary = await this.aiGateway.getFinalAISummary(
-          cleanedResponse,
+          responseText,
           settings.llm_model,
         );
 
