@@ -4,14 +4,8 @@ import { ChatHistory } from "@/domain/entities/Prompt";
 export interface AIGateway {
   getAIResponse(chatHistory: ChatHistory, llmModel?: string): Promise<string>;
 
-  getFinalAISummary(
-    prompt: string,
-    llmModel?: string,
-  ): Promise<string>;
-
-  /// Full chat history is needed to generate a summary when there is no
-  /// closed tag in the chat history.
-  getPartialAISummary(
+  /// Generate a summary based on the chat history.
+  getAISummary(
     chatHistory: ChatHistory,
     llmModel?: string,
   ): Promise<string>;

@@ -64,15 +64,17 @@ export class HandleIncomingMessage implements UseCase {
       // Get all the chat history for the current session
       chatHistory = await this.promptRepository.getPromptHistory(sessionId);
 
-      // Get the AI response and check if it's the final response
+      // Get the AI response
       const aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
         settings.llm_model,
       );
+      console.log("Raw AI response:", aiResponse);
 
       // Parse the AI response, removing any metadata like [closed]
       let [responseText, llmText, isFinalResponse, optionList] = this.aiGateway
         .parseResponse(aiResponse);
+      console.log("Options:", optionList);
 
       // Save the AI response as assistant in the chat history
       await this.promptRepository.savePrompt({
@@ -87,8 +89,8 @@ export class HandleIncomingMessage implements UseCase {
       // If it's the final response, close the session
       if (isFinalResponse) {
         // Request another prompt to AI and ask for a summary in json format
-        const summary = await this.aiGateway.getFinalAISummary(
-          responseText,
+        const summary = await this.aiGateway.getAISummary(
+          chatHistory,
           settings.llm_model,
         );
 
@@ -103,9 +105,16 @@ export class HandleIncomingMessage implements UseCase {
     message: Message,
     metadata: Metadata,
     aiResponse: string,
-    optionList?: OptionList,
+    optionList: OptionList,
   ) {
-    await axios({
+    const type =
+      optionList.options.length > 0 && optionList.options.length <= 10
+        ? "interactive"
+        : "text";
+
+    const interactiveType = optionList.options.length > 3 ? "list" : "button";
+
+    const data = {
       method: "POST",
       url:
         `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
@@ -115,25 +124,47 @@ export class HandleIncomingMessage implements UseCase {
       data: {
         messaging_product: "whatsapp",
         to: message.from,
-        type: message.type,
-        text: message.type == "text" ? { body: aiResponse } : undefined,
-        interactive: message.type == "interactive" && optionList?.options
-          ? {
-            type: "button",
-            body: { text: aiResponse },
-            action: {
-              buttons: optionList?.options?.map((option) => ({
-                type: "reply",
-                reply: {
-                  id: slugify(option),
-                  title: option,
-                },
-              })),
-            },
-          }
+        type: type,
+        text: type == "text" ? { body: aiResponse } : undefined,
+        interactive: type == "interactive"
+          ? interactiveType == "button"
+            ? {
+              type: "button",
+              body: { text: aiResponse },
+              action: {
+                buttons: optionList?.options?.map((option) => ({
+                  type: "reply",
+                  reply: {
+                    id: slugify(option, {
+                      strict: true,
+                    }),
+                    title: option,
+                  },
+                })),
+              },
+            }
+            : {
+              type: "list",
+              body: { text: aiResponse },
+              action: {
+                button: "Ver opções",
+                sections: [
+                  {
+                    rows: optionList?.options?.map((option) => ({
+                      ID: slugify(option, {
+                        strict: true,
+                      }),
+                      title: option,
+                    })),
+                  },
+                ],
+              },
+            }
           : undefined,
       },
-    });
+    };
+    console.log("Sending reply message:", JSON.stringify(data, null, 2));
+    await axios(data);
   }
 
   private async markMessageAsRead(message: Message, metadata: Metadata) {

@@ -30,7 +30,7 @@ export class GroqAIGateway implements AIGateway {
     const multipleEmptyLinesRegex = /\n{2,}/g;
     replyText = replyText.replace(multipleEmptyLinesRegex, "\n\n").trim();
 
-    let llmText = replyText.replace(standaloneTagRegex, "");
+    let llmText = response.replace(standaloneTagRegex, "");
     llmText = llmText.replace(multipleEmptyLinesRegex, "\n\n").trim();
 
     return [replyText, llmText, isFinalResponse, { options: optionList }];
@@ -45,38 +45,15 @@ export class GroqAIGateway implements AIGateway {
         role: message.role,
         content: message.content,
       })),
-      model: llmModel || "llama-3.1-8b-instant",
+      model: llmModel || "llama-3.1-70b-versatile",
+      temperature: 0.3,
+      top_p: 0.2,
     });
 
     return response.choices[0]?.message?.content || "";
   }
 
-  async getFinalAISummary(
-    prompt: string,
-    llmModel?: string,
-  ): Promise<string> {
-    const systemPrompt = `
-Você receberá um texto resumido de uma conversa e deverá convertê-lo em um JSON com a seguinte estrutura:
-{
-  "cidade": "",
-  "titulo": "",
-  "resumo": ""
-}
-Detecte a cidade, o título e faça um resumo contendo sobre tudo o que foi relatado na conversa. Não responda nada além do JSON. Se alguma informação não estiver presente, deixe o campo vazio. Ignore a última parte do texto com o agradecimento. Use sempre Português do Brasil.
-`;
-
-    const response = await this.groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ],
-      model: llmModel || "llama-3.1-8b-instant",
-    });
-
-    return response.choices[0]?.message?.content || "";
-  }
-
-  async getPartialAISummary(
+  async getAISummary(
     chatHistory: ChatHistory,
     llmModel?: string,
   ): Promise<string> {
