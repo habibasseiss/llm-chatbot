@@ -41,9 +41,15 @@ export interface Text {
 export interface Interactive {
   type: string;
   button_reply: ButtonReply;
+  list_reply: ListReply;
 }
 
 export interface ButtonReply {
+  id: string;
+  title: string;
+}
+
+export interface ListReply {
   id: string;
   title: string;
 }

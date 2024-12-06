@@ -28,7 +28,12 @@ export class HandleIncomingMessage implements UseCase {
 
       let messageContent = "";
       if (message.type == "interactive") {
-        messageContent = message.interactive?.button_reply?.title ?? "";
+        if (message.interactive?.type == "button_reply") {
+          messageContent = message.interactive?.button_reply?.title ?? "";
+        }
+        if (message.interactive?.type == "list_reply") {
+          messageContent = message.interactive?.list_reply?.title ?? "";
+        }
       } else {
         messageContent = message.text?.body ?? "";
       }
@@ -72,13 +77,13 @@ export class HandleIncomingMessage implements UseCase {
       console.log("Raw AI response:", aiResponse);
 
       // Parse the AI response, removing any metadata like [closed]
-      let [responseText, llmText, isFinalResponse, optionList] = this.aiGateway
+      let [responseText, isFinalResponse, optionList] = this.aiGateway
         .parseResponse(aiResponse);
       console.log("Options:", optionList);
 
       // Save the AI response as assistant in the chat history
       await this.promptRepository.savePrompt({
-        content: llmText,
+        content: aiResponse,
         role: "assistant",
         sessionId: sessionId,
       });
@@ -114,6 +119,20 @@ export class HandleIncomingMessage implements UseCase {
 
     const interactiveType = optionList.options.length > 3 ? "list" : "button";
 
+    const applySlug = (option: string) => {
+      return slugify(option, {
+        replacement: "",
+        strict: true,
+      });
+    };
+
+    const truncateTitle = (option: string, limit: number) => {
+      let effectiveLimit = limit - 2;
+      return option.length > effectiveLimit
+        ? `${option.slice(0, effectiveLimit)}..`
+        : option;
+    };
+
     const data = {
       method: "POST",
       url:
@@ -135,10 +154,8 @@ export class HandleIncomingMessage implements UseCase {
                 buttons: optionList?.options?.map((option) => ({
                   type: "reply",
                   reply: {
-                    id: slugify(option, {
-                      strict: true,
-                    }),
-                    title: option,
+                    id: applySlug(option),
+                    title: truncateTitle(option, 20),
                   },
                 })),
               },
@@ -151,10 +168,8 @@ export class HandleIncomingMessage implements UseCase {
                 sections: [
                   {
                     rows: optionList?.options?.map((option) => ({
-                      ID: slugify(option, {
-                        strict: true,
-                      }),
-                      title: option,
+                      id: applySlug(option),
+                      title: truncateTitle(option, 24),
                     })),
                   },
                 ],

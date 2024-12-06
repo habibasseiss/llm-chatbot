@@ -10,30 +10,47 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  parseResponse(response: string): [string, string, boolean, OptionList] {
-    const isFinalResponse = response.includes("[closed]");
+  parseResponse(response: string): [string, boolean, OptionList] {
+    let replyText = "";
+    let optionList: string[] = [];
+    let isFinalResponse = false;
 
-    const regex = /\[options\]([\s\S]*?)\[\/options\]/;
+    // Check if the response is a JSON string
+    const regex = /```json([\s\S]*?)```/;
     const match = response.match(regex);
-    const optionsText = match ? match[1].trim() : null;
-    const optionList = optionsText?.split(/\r?\n/) ?? [];
+    let jsonContent = "";
 
-    // Remove content between matching start and end tags like [options] and [/options]
-    const contentBetweenTagsRegex = /\[[^\]]+\][\s\S]*?\[\/[^\]]+\]/g;
-    let replyText = response.replace(contentBetweenTagsRegex, "");
+    if (match) {
+      // response has a ```json block
+      jsonContent = match[1].trim();
+    } else {
+      jsonContent = response;
+    }
 
-    // Remove any standalone tags like [closed]
-    const standaloneTagRegex = /\[[^\]]+\]/g;
-    replyText = replyText.replace(standaloneTagRegex, "");
+    // try to parse response as a json string
+    try {
+      const responseObj = JSON.parse(jsonContent);
 
-    // Replace two or more consecutive newline characters with a single newline
-    const multipleEmptyLinesRegex = /\n{2,}/g;
-    replyText = replyText.replace(multipleEmptyLinesRegex, "\n\n").trim();
+      replyText = responseObj.bot;
 
-    let llmText = response.replace(standaloneTagRegex, "");
-    llmText = llmText.replace(multipleEmptyLinesRegex, "\n\n").trim();
+      if (responseObj.options) {
+        optionList = responseObj.options;
+      }
 
-    return [replyText, llmText, isFinalResponse, { options: optionList }];
+      if (responseObj.closed === true) {
+        isFinalResponse = true;
+      }
+
+      return [replyText, isFinalResponse, { options: optionList }];
+    } catch (_) {
+      // response is not a json string (parse error)
+    }
+
+    // response is not a json string
+    console.log("No JSON response detected, using raw response.");
+    replyText = response;
+
+    return [replyText, isFinalResponse, { options: optionList }];
   }
 
   async getAIResponse(
