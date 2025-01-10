@@ -100,6 +100,20 @@ export class HandleIncomingMessage implements UseCase {
         );
 
         await this.promptRepository.closeSession(sessionId, summary);
+
+        // Send the summary to the user
+        try {
+          const parsedSummary = JSON.parse(summary);
+
+          await this.sendReply(
+            message,
+            metadata,
+            `O resumo do seu rumor é:\n\n${parsedSummary.resumo}`,
+            { options: [] },
+          );
+        } catch (error) {
+          console.log("Error parsing summary:", error);
+        }
       }
     } catch (error) {
       console.log(error);

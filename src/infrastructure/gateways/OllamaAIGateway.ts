@@ -3,9 +3,9 @@ import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { Ollama } from "ollama";
 
-const DEFAULT_MODEL = "llama3.3";
+const DEFAULT_MODEL = "llama3.2-vision";
 const OLLAMA_OPTIONS = {
-  num_ctx: 32768,
+  num_ctx: 8192,
   temperature: 0.3,
   top_p: 0.2,
 };
