@@ -1,0 +1,22 @@
+services:
+  sgr_webhook:
+    build: .
+    container_name: sgr_webhook
+    environment:
+      DATABASE_URL: $DATABASE_URL
+      WEBHOOK_VERIFY_TOKEN: $WEBHOOK_VERIFY_TOKEN
+      GRAPH_API_TOKEN: $GRAPH_API_TOKEN
+      API_URL: $API_URL
+      API_KEY: $API_KEY
+      OLLAMA_HOST: $OLLAMA_HOST
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - containers
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  containers:
+    external: true
