@@ -69,8 +69,27 @@ export class OllamaAIGateway implements AIGateway {
         role: message.role,
         content: message.content,
       })),
+      format: {
+        type: "object",
+        properties: {
+          bot: {
+            type: "string",
+          },
+          options: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+          },
+          closed: {
+            type: "boolean",
+          },
+        },
+        required: ["bot"],
+      },
       model: llmModel || DEFAULT_MODEL,
       options: OLLAMA_OPTIONS,
+      stream: false,
     });
 
     return response.message.content;
@@ -80,15 +99,8 @@ export class OllamaAIGateway implements AIGateway {
     chatHistory: ChatHistory,
     llmModel?: string,
   ): Promise<string> {
-    const systemPrompt = `
-Você receberá uma conversa e deverá convertê-lo em um JSON com a seguinte estrutura:
-{
-  "cidade": "",
-  "titulo": "",
-  "resumo": ""
-}
-Detecte a cidade, o título e faça um resumo contendo sobre tudo o que foi relatado na conversa. Não responda nada além do JSON. Se alguma informação não estiver presente, deixe o campo vazio. Use sempre Português do Brasil.
-`;
+    const systemPrompt =
+      `Você receberá uma conversa e deverá convertê-lo em um JSON. Detecte a cidade, o título e faça um resumo contendo sobre tudo o que foi relatado na conversa. Se alguma informação não estiver presente, deixe o campo vazio. Não forneça informações a mais do que as que estão presentes na conversa. Use sempre Português do Brasil.`;
 
     const prompt = chatHistory.messages
       .filter((message) => message.role !== "system")
@@ -100,8 +112,24 @@ Detecte a cidade, o título e faça um resumo contendo sobre tudo o que foi rela
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
+      format: {
+        type: "object",
+        properties: {
+          cidade: {
+            type: "string",
+          },
+          titulo: {
+            type: "string",
+          },
+          resumo: {
+            type: "string",
+          },
+        },
+        required: ["cidade", "titulo", "resumo"],
+      },
       model: llmModel || DEFAULT_MODEL,
       options: OLLAMA_OPTIONS,
+      stream: false,
     });
 
     return response.message.content;
