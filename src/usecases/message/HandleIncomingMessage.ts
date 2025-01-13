@@ -105,12 +105,14 @@ export class HandleIncomingMessage implements UseCase {
         try {
           const parsedSummary = JSON.parse(summary);
 
-          await this.sendReply(
-            message,
-            metadata,
-            `O resumo do seu rumor é:\n\n${parsedSummary.resumo}`,
-            { options: [] },
-          );
+          if (parsedSummary && parsedSummary.resumo) {
+            await this.sendReply(
+              message,
+              metadata,
+              `O resumo do seu rumor é:\n\n${parsedSummary.resumo}`,
+              { options: [] },
+            );
+          }
         } catch (error) {
           console.log("Error parsing summary:", error);
         }
