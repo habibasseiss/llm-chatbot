@@ -15,6 +15,9 @@ export class HttpAPIGateway implements APIGateway {
       const response = await axios.get(`${this.apiUrl}/settings`, {
         headers: {
           "X-Api-Key": this.apiKey,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
       });
       return response.data as GeneralSettings;
