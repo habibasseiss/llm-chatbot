@@ -1,54 +1,97 @@
-# WhatsApp Platform Quick Start
+# SGR Webhook
 
-Welcome to your first step toward building awesome WhatsApp apps!
+A WhatsApp integration service built with TypeScript that handles incoming messages and chat sessions using AI capabilities through Ollama.
 
-This project contains the code for a simple webhook you can use to get started
-using the WhatsApp Platform.
+## Features
 
-The code here mirrors what is in our
-[webhook set up guide](https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks),
-and may be used as the starting point for doing the
-["Get Started With the WhatsApp Business Cloud API guide"](https://developers.facebook.com/docs/whatsapp/getting-started/signing-up/).
+- WhatsApp message webhook handling
+- AI-powered chat sessions using Ollama
+- PostgreSQL database integration for prompt management
+- RESTful API endpoints
+- Clean architecture implementation (Domain-Driven Design)
 
-## Additional Resources
+## Project Structure
 
-Interested in learning more about the WhatsApp Platform?
+```
+src/
+├── domain/          # Core business logic and entities
+├── infrastructure/  # External services implementation
+│   ├── database/   # Database connections and configurations
+│   ├── gateways/   # External service integrations (Ollama, HTTP)
+│   ├── repositories/ # Data access implementations
+│   └── webserver/  # Express server setup
+├── interfaces/     # Controllers and gateway interfaces
+└── usecases/      # Application use cases
+```
 
-Check out these resources:
+## Prerequisites
 
-- [**Webhook set up guide**](https://developers.facebook.com/docs/whatsapp/getting-started/signing-up/#configure-webhooks):
-  The walkthrough for the code in this project.
+- Node.js >= 16.0.0
+- PostgreSQL database
+- Ollama AI service
+- WhatsApp Business API access
 
-- [**Quick start tutorial**](https://developers.facebook.com/docs/whatsapp/getting-started/signing-up/):
-  Build your first app by remixing this project and following our quick start
-  tutorial.
+## Environment Variables
 
-- [**WhatsApp Business Platform Documentation**](https://developers.facebook.com/docs/whatsapp/)
+```
+GRAPH_API_TOKEN=   # WhatsApp Graph API token
+OLLAMA_HOST=      # Ollama AI service host
+DATABASE_URL=     # PostgreSQL connection URL
+API_URL=          # External API URL
+API_KEY=          # External API key
+```
 
-## Environment Setup
+## Installation
 
-1. Create an account on Glitch to have access to all features mentioned here.
-2. Remix this project on Glitch.
-3. Click on the file `.env` on the left sidebar, and set these environment
-   variables
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables in `.env` file
+4. Run database migrations:
+   ```bash
+   npm run migrate
+   ```
 
-- `WEBHOOK_VERIFY_TOKEN`: You can use any string and use the same when setting
-  up the webhook in your app in the following steps.
-- `GRAPH_API_TOKEN`: You can get a **Temporary access token** from the dashboard
-  of your app on **Meta for Developers** when you click **API Setup** under the
-  **WhatsApp** section on the left navigation pane.
+## Development
 
-4. Get the new Glitch URL to use as your webhook, eg:
-   `https://project-name.glitch.me/webhook`. You can find the base URL by
-   clicking on **Share** on top right in Glitch, copy the **Live Site** URL,
-   then add `/webhook` to it.
-5. Subscribe the webhook URL in the dashboard of your app on **Meta for
-   Developers**. Click the **Configuration** menu under **WhatsApp** in the left
-   navigation pane. In the **Webhook** section, click **Edit** and paste your
-   webhook URL from the previous step. For the **Verify token** field, use the
-   `VERIFY_TOKEN` value in your .env file, then click **Verify and save**. Under
-   the **Webhook fields** section click **Manage** and make sure **messages**
-   field is selected.
-6. Edit `server.js` to change the webhook logic as needed.
-7. Click on the **Logs** tab at the bottom to view server logs. The logs section
-   also has a button to attach a debugger via Chrome devtools.
+```bash
+# Run in development mode
+npm run dev
+
+# Build the project
+npm run build
+
+# Start production server
+npm start
+
+# Run tests
+npm test
+```
+
+## Architecture
+
+The project follows clean architecture principles with clear separation of concerns:
+
+- **Domain Layer**: Contains business logic and entities
+- **Use Cases**: Implements application-specific business rules
+- **Infrastructure**: Handles external concerns (database, AI, HTTP)
+- **Interfaces**: Defines boundaries between layers
+
+## Technologies
+
+- TypeScript
+- Express.js
+- Ollama AI
+- PostgreSQL
+- Jest (Testing)
+- Node.js
+
+## License
+
+MIT License
+
+## Author
+
+Habib Asseiss Neto
