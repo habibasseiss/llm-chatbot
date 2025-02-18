@@ -1,5 +1,4 @@
 import { PostgresDatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
-import { HttpAPIGateway } from "@/infrastructure/gateways/HttpAPIGateway";
 import { DatabasePromptRepository } from "@/infrastructure/repositories/DatabasePromptRepository";
 import { ExpressServer } from "@/infrastructure/webserver/ExpressServer";
 import { WebhookController } from "@/interfaces/controllers/WebhookController";
@@ -11,6 +10,7 @@ import { OpenAIAIGateway } from "./infrastructure/gateways/OpenAIAIGateway";
 import { ApiController } from "./interfaces/controllers/ApiController";
 import { AIGateway } from "./interfaces/gateways/AIGateway";
 import { HandleChatSession } from "./usecases/message/HandleChatSession";
+import { DatabaseSettingsGateway } from "./infrastructure/gateways/DatabaseSettingsGateway";
 
 dotenv.config();
 
@@ -45,20 +45,20 @@ switch (aiService) {
     throw new Error(`Invalid AI service: ${aiService}`);
 }
 
-const apiGateway = new HttpAPIGateway(API_URL!, API_KEY!);
 const pgDatabaseConnection = new PostgresDatabaseConnection(DATABASE_URL!);
 const promptRepository = new DatabasePromptRepository(pgDatabaseConnection);
+const settingsGateway = new DatabaseSettingsGateway(pgDatabaseConnection);
 
 const handleIncomingMessage = new HandleIncomingMessage(
   GRAPH_API_TOKEN!,
   aiGateway,
   promptRepository,
-  apiGateway
+  settingsGateway
 );
 const handleChatSession = new HandleChatSession(
   aiGateway,
   promptRepository,
-  apiGateway
+  settingsGateway
 );
 
 const webhookController = new WebhookController(handleIncomingMessage);

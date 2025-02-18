@@ -1,11 +1,11 @@
-# SGR Webhook
+# LLM-ChatBot
 
-A WhatsApp integration service built with TypeScript that handles incoming messages and chat sessions using AI capabilities through Ollama.
+A WhatsApp chatbot service built with TypeScript that handles incoming messages and chat sessions using AI capabilities.
 
 ## Features
 
 - WhatsApp message webhook handling
-- AI-powered chat sessions using Ollama
+- AI-powered chat sessions using Ollama or OpenAI
 - PostgreSQL database integration for prompt management
 - RESTful API endpoints
 - Clean architecture implementation (Domain-Driven Design)
@@ -14,14 +14,14 @@ A WhatsApp integration service built with TypeScript that handles incoming messa
 
 ```
 src/
-├── domain/          # Core business logic and entities
-├── infrastructure/  # External services implementation
-│   ├── database/   # Database connections and configurations
-│   ├── gateways/   # External service integrations (Ollama, HTTP)
+├── domain/           # Core business logic and entities
+├── infrastructure/   # External services implementation
+│   ├── database/     # Database connections and configurations
+│   ├── gateways/     # External service integrations (Ollama, HTTP)
 │   ├── repositories/ # Data access implementations
-│   └── webserver/  # Express server setup
-├── interfaces/     # Controllers and gateway interfaces
-└── usecases/      # Application use cases
+│   └── webserver/    # Express server setup
+├── interfaces/       # Controllers and gateway interfaces
+└── usecases/         # Application use cases
 ```
 
 ## Prerequisites
@@ -35,10 +35,10 @@ src/
 
 ```
 GRAPH_API_TOKEN=   # WhatsApp Graph API token
-OLLAMA_HOST=      # Ollama AI service host
-DATABASE_URL=     # PostgreSQL connection URL
-API_URL=          # External API URL
-API_KEY=          # External API key
+OLLAMA_HOST=       # Ollama AI service host
+DATABASE_URL=      # PostgreSQL connection URL
+OPENAI_BASE_URL=   # OpenAI API base URL
+OPENAI_API_KEY=    # OpenAI API key
 ```
 
 ## Installation
