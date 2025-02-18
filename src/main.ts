@@ -7,6 +7,7 @@ import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage"
 import dotenv from "dotenv";
 import { GroqAIGateway } from "./infrastructure/gateways/GroqAIGateway";
 import { OllamaAIGateway } from "./infrastructure/gateways/OllamaAIGateway";
+import { OpenAIAIGateway } from "./infrastructure/gateways/OpenAIAIGateway";
 import { ApiController } from "./interfaces/controllers/ApiController";
 import { AIGateway } from "./interfaces/gateways/AIGateway";
 import { HandleChatSession } from "./usecases/message/HandleChatSession";
@@ -15,6 +16,8 @@ dotenv.config();
 
 const PORT = 3000;
 const {
+  OPENAI_BASE_URL,
+  OPENAI_API_KEY,
   GRAPH_API_TOKEN,
   OLLAMA_HOST,
   GROQ_API_KEY,
@@ -29,6 +32,9 @@ console.log(`AI service: ${aiService}`);
 let aiGateway: AIGateway;
 
 switch (aiService) {
+  case "openai":
+    aiGateway = new OpenAIAIGateway(OPENAI_BASE_URL!, OPENAI_API_KEY!);
+    break;
   case "ollama":
     aiGateway = new OllamaAIGateway(OLLAMA_HOST!);
     break;
