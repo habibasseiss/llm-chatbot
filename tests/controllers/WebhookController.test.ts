@@ -3,66 +3,90 @@ import request from "supertest";
 import { WebhookController } from "../../src/interfaces/controllers/WebhookController";
 import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
-class MockHandleIncomingMessage extends HandleIncomingMessage {
-  async execute() {
-    return;
-  }
-}
-
 describe("WebhookController", () => {
   let app: express.Application;
   let controller: WebhookController;
+  let mockHandleIncomingMessage: HandleIncomingMessage;
 
   beforeEach(() => {
     console.log = jest.fn();
-    const mockHandleIncomingMessage = new MockHandleIncomingMessage(
-      "mock-graph-api-token",
+    app = express();
+
+    mockHandleIncomingMessage = new HandleIncomingMessage(
+      "mock-token",
       {
         getAIResponse: jest.fn(),
-        getFinalAISummary: jest.fn(),
-        getPartialAISummary: jest.fn(),
-        isFinalResponse: jest.fn(),
-        parseResponse: jest.fn(),
+        getAISummary: jest.fn(),
+        parseResponse: jest
+          .fn()
+          .mockReturnValue(["response", false, { options: [] }]),
       },
       {
-        getSessionId: jest.fn(),
-        getPromptHistory: jest.fn(),
+        getSessionId: jest.fn().mockResolvedValue("test-session-id"),
+        getPromptHistory: jest.fn().mockResolvedValue([]),
         savePrompt: jest.fn(),
         closeSession: jest.fn(),
       },
-      { getSettings: jest.fn() },
+      {
+        getSettings: jest.fn().mockResolvedValue({
+          system_prompt: "mock prompt",
+          session_duration: 24,
+          llm_model: "mock-model",
+        }),
+      }
     );
 
     controller = new WebhookController(mockHandleIncomingMessage);
-
-    app = express();
     app.use(express.json());
-    app.post("/webhook", (req, res) => controller.handleWebhook(req, res));
-    app.get("/webhook", (req, res) => controller.verifyWebhook(req, res));
+    app.post("/webhook", controller.handleWebhook.bind(controller));
+    app.get("/webhook", controller.verifyWebhook.bind(controller));
   });
 
-  it("should return 200 for valid webhook verification", async () => {
+  it("should verify webhook with valid token", async () => {
+    const verifyToken = process.env.WEBHOOK_VERIFY_TOKEN || "default-token";
+    const response = await request(app).get("/webhook").query({
+      "hub.mode": "subscribe",
+      "hub.verify_token": verifyToken,
+      "hub.challenge": "challenge-token",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe("challenge-token");
+  });
+
+  it("should reject webhook verification with invalid token", async () => {
+    const response = await request(app).get("/webhook").query({
+      "hub.mode": "subscribe",
+      "hub.verify_token": "invalid-token",
+      "hub.challenge": "challenge-token",
+    });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("should handle incoming webhook POST request", async () => {
     const response = await request(app)
-      .get("/webhook")
-      .query({
-        "hub.mode": "subscribe",
-        "hub.verify_token": process.env.WEBHOOK_VERIFY_TOKEN,
-        "hub.challenge": "challenge",
+      .post("/webhook")
+      .send({
+        object: "whatsapp_business_account",
+        entry: [
+          {
+            changes: [
+              {
+                value: {
+                  messages: [
+                    {
+                      from: "test-user",
+                      text: { body: "test message" },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
       });
 
     expect(response.status).toBe(200);
-    expect(response.text).toBe("challenge");
-  });
-
-  it("should return 403 for invalid webhook verification", async () => {
-    const response = await request(app)
-      .get("/webhook")
-      .query({
-        "hub.mode": "subscribe",
-        "hub.verify_token": "wrong_token",
-        "hub.challenge": "challenge",
-      });
-
-    expect(response.status).toBe(403);
   });
 });

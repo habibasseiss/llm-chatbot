@@ -1,5 +1,5 @@
 import axios from "axios";
-import { WhatsAppWebhookEvent } from "../../src/domain/entities/Message";
+import { WhatsAppWebhookEvent, OptionList } from "../../src/domain/entities/Message";
 import { ChatHistory } from "../../src/domain/entities/Prompt";
 import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
 import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
@@ -21,20 +21,16 @@ class MockAIGateway implements AIGateway {
   ): Promise<string> {
     return `AI response`;
   }
-  async getFinalAISummary(prompt: string, llmModel?: string): Promise<string> {
-    return `AI response`;
-  }
-  async getPartialAISummary(
+
+  async getAISummary(
     chatHistory: ChatHistory,
     llmModel?: string,
   ): Promise<string> {
-    return `AI response`;
+    return `AI summary`;
   }
-  isFinalResponse(response: string): boolean {
-    return response.includes("[closed]");
-  }
-  parseResponse(response: string): string {
-    return response;
+
+  parseResponse(response: string): [string, boolean, OptionList] {
+    return [response, response.includes("[closed]"), { options: [] }];
   }
 }
 
@@ -110,11 +106,12 @@ describe("HandleIncomingMessage", () => {
 
     expect(mockedAxios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url:
-          `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
+        method: "POST",
+        url: `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
         data: {
           messaging_product: "whatsapp",
           to: "556792326246",
+          type: "text",
           text: { body: "AI response" },
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
