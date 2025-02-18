@@ -1,11 +1,10 @@
-import { OptionList } from "@/domain/entities/Message";
 import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 
 const DEFAULT_MODEL = "microsoft/phi-4";
-const OLLAMA_OPTIONS = {
+const OPENAI_OPTIONS = {
   temperature: 0.3,
   top_p: 0.2,
 };
@@ -18,49 +17,6 @@ export class OpenAIAIGateway implements AIGateway {
       baseURL: host,
       apiKey: apiKey,
     });
-  }
-
-  parseResponse(response: string): [string, boolean, OptionList] {
-    let replyText = "";
-    let optionList: string[] = [];
-    let isFinalResponse = false;
-
-    // Check if the response is a JSON string
-    const regex = /```json([\s\S]*?)```/;
-    const match = response.match(regex);
-    let jsonContent = "";
-
-    if (match) {
-      // response has a ```json block
-      jsonContent = match[1].trim();
-    } else {
-      jsonContent = response;
-    }
-
-    // try to parse response as a json string
-    try {
-      const responseObj = JSON.parse(jsonContent);
-
-      replyText = responseObj.bot;
-
-      if (responseObj.options) {
-        optionList = responseObj.options;
-      }
-
-      if (responseObj.closed === true) {
-        isFinalResponse = true;
-      }
-
-      return [replyText, isFinalResponse, { options: optionList }];
-    } catch (_) {
-      // response is not a json string (parse error)
-    }
-
-    // response is not a json string
-    console.log("No JSON response detected, using raw response.");
-    replyText = response;
-
-    return [replyText, isFinalResponse, { options: optionList }];
   }
 
   async getAIResponse(
@@ -80,7 +36,7 @@ export class OpenAIAIGateway implements AIGateway {
       response_format: {
         type: "json_object",
       },
-      temperature: OLLAMA_OPTIONS?.temperature || 0.7,
+      temperature: OPENAI_OPTIONS?.temperature || 0.7,
       max_tokens: null,
     });
 
@@ -112,7 +68,7 @@ export class OpenAIAIGateway implements AIGateway {
       response_format: {
         type: "json_object",
       },
-      temperature: OLLAMA_OPTIONS?.temperature || 0.7,
+      temperature: OPENAI_OPTIONS?.temperature || 0.7,
       max_tokens: null,
     });
 

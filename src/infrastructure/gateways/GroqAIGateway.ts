@@ -1,4 +1,3 @@
-import { OptionList } from "@/domain/entities/Message";
 import { ChatHistory } from "@/domain/entities/Prompt";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import Groq from "groq-sdk";
@@ -10,52 +9,9 @@ export class GroqAIGateway implements AIGateway {
     this.groq = new Groq({ apiKey });
   }
 
-  parseResponse(response: string): [string, boolean, OptionList] {
-    let replyText = "";
-    let optionList: string[] = [];
-    let isFinalResponse = false;
-
-    // Check if the response is a JSON string
-    const regex = /```json([\s\S]*?)```/;
-    const match = response.match(regex);
-    let jsonContent = "";
-
-    if (match) {
-      // response has a ```json block
-      jsonContent = match[1].trim();
-    } else {
-      jsonContent = response;
-    }
-
-    // try to parse response as a json string
-    try {
-      const responseObj = JSON.parse(jsonContent);
-
-      replyText = responseObj.bot;
-
-      if (responseObj.options) {
-        optionList = responseObj.options;
-      }
-
-      if (responseObj.closed === true) {
-        isFinalResponse = true;
-      }
-
-      return [replyText, isFinalResponse, { options: optionList }];
-    } catch (_) {
-      // response is not a json string (parse error)
-    }
-
-    // response is not a json string
-    console.log("No JSON response detected, using raw response.");
-    replyText = response;
-
-    return [replyText, isFinalResponse, { options: optionList }];
-  }
-
   async getAIResponse(
     chatHistory: ChatHistory,
-    llmModel?: string,
+    llmModel?: string
   ): Promise<string> {
     const response = await this.groq.chat.completions.create({
       messages: chatHistory.messages.map((message) => ({
@@ -72,7 +28,7 @@ export class GroqAIGateway implements AIGateway {
 
   async getAISummary(
     chatHistory: ChatHistory,
-    llmModel?: string,
+    llmModel?: string
   ): Promise<string> {
     const systemPrompt = `
 Você receberá uma conversa e deverá convertê-lo em um JSON com a seguinte estrutura:

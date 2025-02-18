@@ -10,6 +10,7 @@ import { APIGateway } from "@/interfaces/gateways/APIGateway";
 import UseCase from "@/usecases/UseCase";
 import axios from "axios";
 import slugify from "slugify";
+import { AIResponseParser } from "@/infrastructure/parsers/AIResponseParser";
 
 export class HandleIncomingMessage implements UseCase {
   constructor(
@@ -77,8 +78,7 @@ export class HandleIncomingMessage implements UseCase {
       console.log("Raw AI response:", aiResponse);
 
       // Parse the AI response, removing any metadata like [closed]
-      let [responseText, isFinalResponse, optionList] = this.aiGateway
-        .parseResponse(aiResponse);
+      let [responseText, isFinalResponse, optionList] = AIResponseParser.parse(aiResponse);
       console.log("Options:", optionList);
 
       // Save the AI response as assistant in the chat history
