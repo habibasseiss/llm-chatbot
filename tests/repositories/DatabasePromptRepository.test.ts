@@ -1,12 +1,12 @@
-import { randomUUID } from "crypto";
-import migrate from "node-pg-migrate";
-import { Prompt, Role, Session } from "../../src/domain/entities/Prompt";
-import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
+import { Prompt, Role, Session } from "@/domain/entities/Prompt";
+import { PromptRepository } from "@/domain/repositories/PromptRepository";
 import {
   DatabaseConnection,
   PostgresDatabaseConnection,
-} from "../../src/infrastructure/database/DatabaseConnection";
-import { DatabasePromptRepository } from "../../src/infrastructure/repositories/DatabasePromptRepository";
+} from "@/infrastructure/database/DatabaseConnection";
+import { DatabasePromptRepository } from "@/infrastructure/repositories/DatabasePromptRepository";
+import { randomUUID } from "crypto";
+import migrate from "node-pg-migrate";
 
 describe("Test PostgresMessageRepository", () => {
   let databaseUrl: string;
@@ -61,13 +61,13 @@ describe("Test PostgresMessageRepository", () => {
 
     const sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions WHERE user_id = $1",
-      ["12345"],
+      ["12345"]
     );
     expect(sessions[0].user_profile_name).toBe("Test user");
 
     const prompts = await connection.query<Prompt[]>(
       "SELECT * FROM prompts WHERE session_id = $1",
-      [sessions[0].id],
+      [sessions[0].id]
     );
     expect(prompts).toHaveLength(1);
   });
@@ -77,7 +77,7 @@ describe("Test PostgresMessageRepository", () => {
     const sessionId2 = await repository.getSessionId("54321", "Test user");
 
     const sessions = await connection.query<Session[]>(
-      "SELECT * FROM sessions",
+      "SELECT * FROM sessions"
     );
     expect(sessions).toHaveLength(2);
     expect(sessionId).not.toBe(sessionId2);
@@ -107,7 +107,7 @@ describe("Test PostgresMessageRepository", () => {
 
     let sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions WHERE user_id = $1",
-      [uuid],
+      [uuid]
     );
 
     expect(sessions).toHaveLength(1);
@@ -122,7 +122,7 @@ describe("Test PostgresMessageRepository", () => {
     await repository.savePrompt(prompt3);
     sessions = await connection.query<Session[]>(
       "SELECT * FROM sessions WHERE user_id = $1",
-      [uuid],
+      [uuid]
     );
     expect(sessions).toHaveLength(2);
   });

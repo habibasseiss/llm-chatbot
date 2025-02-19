@@ -1,5 +1,5 @@
-import { DatabaseConnection } from "../../src/infrastructure/database/DatabaseConnection";
-import { DatabaseSettingsGateway } from "../../src/infrastructure/gateways/DatabaseSettingsGateway";
+import { DatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
+import { DatabaseSettingsGateway } from "@/infrastructure/gateways/DatabaseSettingsGateway";
 
 class MockDatabaseConnection implements DatabaseConnection {
   private mockData: Map<string, string> = new Map();

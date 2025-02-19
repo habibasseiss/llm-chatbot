@@ -1,7 +1,8 @@
+import { WebhookController } from "@/interfaces/controllers/WebhookController";
+import { AIGateway } from "@/interfaces/gateways/AIGateway";
+import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
 import express from "express";
 import request from "supertest";
-import { WebhookController } from "../../src/interfaces/controllers/WebhookController";
-import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
 
 describe("WebhookController", () => {
   let app: express.Application;
@@ -12,15 +13,14 @@ describe("WebhookController", () => {
     console.log = jest.fn();
     app = express();
 
+    const mockAIGateway: AIGateway = {
+      getAIResponse: jest.fn(),
+      getAISummary: jest.fn(),
+    };
+
     mockHandleIncomingMessage = new HandleIncomingMessage(
       "mock-token",
-      {
-        getAIResponse: jest.fn(),
-        getAISummary: jest.fn(),
-        parseResponse: jest
-          .fn()
-          .mockReturnValue(["response", false, { options: [] }]),
-      },
+      mockAIGateway,
       {
         getSessionId: jest.fn().mockResolvedValue("test-session-id"),
         getPromptHistory: jest.fn().mockResolvedValue([]),

@@ -7,6 +7,8 @@ const config: JestConfigWithTsJest = {
   transform: {},
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^tests/(.*)$": "<rootDir>/tests/$1"
   },
   testEnvironment: "node",
   setupFiles: ["dotenv/config"],

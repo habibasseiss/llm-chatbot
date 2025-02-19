@@ -1,38 +1,24 @@
+import { WhatsAppWebhookEvent } from "@/domain/entities/Message";
+import { PromptRepository } from "@/domain/repositories/PromptRepository";
+import { AIGateway } from "@/interfaces/gateways/AIGateway";
+import { APIGateway, GeneralSettings } from "@/interfaces/gateways/APIGateway";
+
+import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
 import axios from "axios";
-import { WhatsAppWebhookEvent, OptionList } from "../../src/domain/entities/Message";
-import { ChatHistory } from "../../src/domain/entities/Prompt";
-import { PromptRepository } from "../../src/domain/repositories/PromptRepository";
-import { AIGateway } from "../../src/interfaces/gateways/AIGateway";
-import {
-  APIGateway,
-  GeneralSettings,
-} from "../../src/interfaces/gateways/APIGateway";
-import { HandleIncomingMessage } from "../../src/usecases/message/HandleIncomingMessage";
-import { MockPromptRepository } from "../repositories/MockPromptRepository";
+import { MockPromptRepository } from "tests/repositories/MockPromptRepository";
 
 // Mock axios to prevent actual HTTP requests
 jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-class MockAIGateway implements AIGateway {
-  async getAIResponse(
-    chatHistory: ChatHistory,
-    llmModel?: string,
-  ): Promise<string> {
-    return `AI response`;
-  }
-
-  async getAISummary(
-    chatHistory: ChatHistory,
-    llmModel?: string,
-  ): Promise<string> {
-    return `AI summary`;
-  }
-
-  parseResponse(response: string): [string, boolean, OptionList] {
-    return [response, response.includes("[closed]"), { options: [] }];
-  }
-}
+const mockAIGateway: AIGateway = {
+  getAIResponse: jest.fn().mockResolvedValue(JSON.stringify({
+    bot: "AI response",
+    options: [],
+    closed: false
+  })),
+  getAISummary: jest.fn(),
+};
 
 class MockAPIGateway implements APIGateway {
   async getSettings(): Promise<GeneralSettings> {
@@ -52,39 +38,38 @@ describe("HandleIncomingMessage", () => {
   let apiGateway: MockAPIGateway;
 
   beforeEach(() => {
-    aiGateway = new MockAIGateway();
+    aiGateway = mockAIGateway;
     apiGateway = new MockAPIGateway();
     promptRepository = new MockPromptRepository();
     handleIncomingMessage = new HandleIncomingMessage(
       "mock-graph-api-token",
       aiGateway,
       promptRepository,
-      apiGateway,
+      apiGateway
     );
     webhookEvent = {
-      "messaging_product": "whatsapp",
-      "metadata": {
-        "display_phone_number": "15556109711",
-        "phone_number_id": "284011161465592",
+      messaging_product: "whatsapp",
+      metadata: {
+        display_phone_number: "15556109711",
+        phone_number_id: "284011161465592",
       },
-      "contacts": [
+      contacts: [
         {
-          "profile": {
-            "name": "Habib",
+          profile: {
+            name: "Habib",
           },
-          "wa_id": "556792326246",
+          wa_id: "556792326246",
         },
       ],
-      "messages": [
+      messages: [
         {
-          "from": "556792326246",
-          "id":
-            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
-          "timestamp": "1722539741",
-          "text": {
-            "body": "oi com o samuel",
+          from: "556792326246",
+          id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+          timestamp: "1722539741",
+          text: {
+            body: "oi com o samuel",
           },
-          "type": "text",
+          type: "text",
         },
       ],
     };
@@ -95,16 +80,29 @@ describe("HandleIncomingMessage", () => {
 
     const sessionId = await promptRepository.getSessionId(
       "556792326246",
-      "Habib",
+      "Habib"
     );
     const chatHistory = await promptRepository.getPromptHistory(sessionId);
     expect(chatHistory.messages.length).toBe(3); // system prompt, user message, AI response
   });
 
-  it("should send a reply with AI response", async () => {
+  it("should mark the message as read and send a reply", async () => {
     await handleIncomingMessage.execute(webhookEvent);
 
-    expect(mockedAxios).toHaveBeenCalledWith(
+    expect(mockedAxios).toHaveBeenNthCalledWith(1,
+      expect.objectContaining({
+        method: "POST",
+        url: `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
+        data: {
+          messaging_product: "whatsapp",
+          status: "read",
+          message_id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+        },
+        headers: { Authorization: `Bearer mock-graph-api-token` },
+      })
+    );
+
+    expect(mockedAxios).toHaveBeenNthCalledWith(2,
       expect.objectContaining({
         method: "POST",
         url: `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
@@ -115,25 +113,7 @@ describe("HandleIncomingMessage", () => {
           text: { body: "AI response" },
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
-      }),
-    );
-  });
-
-  it("should mark the message as read", async () => {
-    await handleIncomingMessage.execute(webhookEvent);
-
-    expect(mockedAxios).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url:
-          `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
-        data: {
-          messaging_product: "whatsapp",
-          status: "read",
-          message_id:
-            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
-        },
-        headers: { Authorization: `Bearer mock-graph-api-token` },
-      }),
+      })
     );
   });
 });

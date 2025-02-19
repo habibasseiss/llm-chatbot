@@ -4,11 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*",
+        "./src/*"
       ]
     },
     "esModuleInterop": true,
@@ -22,7 +22,8 @@
     "verbose": false
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules"
