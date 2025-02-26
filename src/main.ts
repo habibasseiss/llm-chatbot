@@ -2,15 +2,20 @@ import { PostgresDatabaseConnection } from "@/infrastructure/database/DatabaseCo
 import { DatabasePromptRepository } from "@/infrastructure/repositories/DatabasePromptRepository";
 import { ExpressServer } from "@/infrastructure/webserver/ExpressServer";
 import { WebhookController } from "@/interfaces/controllers/WebhookController";
-import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
 import dotenv from "dotenv";
+import { MessageSource } from "./domain/entities/GenericMessage";
+import { CLIAdapter } from "./infrastructure/adapters/CLIAdapter";
+import { WhatsAppAdapter } from "./infrastructure/adapters/WhatsAppAdapter";
+import { DatabaseSettingsGateway } from "./infrastructure/gateways/DatabaseSettingsGateway";
 import { GroqAIGateway } from "./infrastructure/gateways/GroqAIGateway";
 import { OllamaAIGateway } from "./infrastructure/gateways/OllamaAIGateway";
 import { OpenAIAIGateway } from "./infrastructure/gateways/OpenAIAIGateway";
+import { MessageSourceAdapter } from "./interfaces/adapters/MessageSourceAdapter";
 import { ApiController } from "./interfaces/controllers/ApiController";
+import { CLIController } from "./interfaces/controllers/CLIController";
 import { AIGateway } from "./interfaces/gateways/AIGateway";
 import { HandleChatSession } from "./usecases/message/HandleChatSession";
-import { DatabaseSettingsGateway } from "./infrastructure/gateways/DatabaseSettingsGateway";
+import { HandleGenericMessage } from "./usecases/message/HandleGenericMessage";
 
 dotenv.config();
 
@@ -25,6 +30,11 @@ const {
   API_URL,
   API_KEY,
 } = process.env;
+
+// Get the enabled message sources from environment variables or default to all
+const enabledSources = process.env.ENABLED_SOURCES
+  ? process.env.ENABLED_SOURCES.split(",")
+  : [MessageSource.WHATSAPP, MessageSource.CLI];
 
 const aiService = process.env.AI_SERVICE;
 console.log(`AI service: ${aiService}`);
@@ -49,20 +59,46 @@ const pgDatabaseConnection = new PostgresDatabaseConnection(DATABASE_URL!);
 const promptRepository = new DatabasePromptRepository(pgDatabaseConnection);
 const settingsGateway = new DatabaseSettingsGateway(pgDatabaseConnection);
 
-const handleIncomingMessage = new HandleIncomingMessage(
-  GRAPH_API_TOKEN!,
+// Create adapters map
+const adapters = new Map<MessageSource, MessageSourceAdapter<any>>();
+
+// Initialize the generic message handler
+const handleGenericMessage = new HandleGenericMessage(
   aiGateway,
   promptRepository,
-  settingsGateway
+  settingsGateway,
+  adapters
 );
+
+// Initialize the chat session handler
 const handleChatSession = new HandleChatSession(
   aiGateway,
   promptRepository,
   settingsGateway
 );
 
-const webhookController = new WebhookController(handleIncomingMessage);
-const apiController = new ApiController(handleChatSession);
-const server = new ExpressServer(webhookController, apiController);
+// Initialize controllers and adapters based on enabled sources
+if (enabledSources.includes(MessageSource.WHATSAPP)) {
+  console.log("Initializing WhatsApp adapter...");
+  const whatsAppAdapter = new WhatsAppAdapter(GRAPH_API_TOKEN!);
+  adapters.set(MessageSource.WHATSAPP, whatsAppAdapter);
 
-server.start(PORT);
+  const webhookController = new WebhookController(
+    handleGenericMessage,
+    GRAPH_API_TOKEN!
+  );
+  const apiController = new ApiController(handleChatSession);
+  const server = new ExpressServer(webhookController, apiController);
+
+  server.start(PORT);
+  console.log(`WhatsApp webhook server started on port ${PORT}`);
+}
+
+if (enabledSources.includes(MessageSource.CLI)) {
+  console.log("Initializing CLI adapter...");
+  const cliAdapter = new CLIAdapter();
+  adapters.set(MessageSource.CLI, cliAdapter);
+
+  const cliController = new CLIController(handleGenericMessage);
+  cliController.start();
+}

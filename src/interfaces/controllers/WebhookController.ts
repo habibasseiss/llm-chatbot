@@ -3,11 +3,19 @@ import {
   Metadata,
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
-import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
+import { HandleGenericMessage } from "@/usecases/message/HandleGenericMessage";
 import { Request, Response } from "express";
+import { WhatsAppAdapter } from "@/infrastructure/adapters/WhatsAppAdapter";
 
 export class WebhookController {
-  constructor(private handleIncomingMessage: HandleIncomingMessage) {}
+  private whatsAppAdapter: WhatsAppAdapter;
+
+  constructor(
+    private handleGenericMessage: HandleGenericMessage,
+    private graphApiToken: string
+  ) {
+    this.whatsAppAdapter = new WhatsAppAdapter(graphApiToken);
+  }
 
   async handleWebhook(req: Request, res: Response) {
     console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
@@ -18,7 +26,8 @@ export class WebhookController {
     const metadata: Metadata | undefined = webhookEvent?.metadata;
 
     if (message && metadata) {
-      await this.handleIncomingMessage.execute(webhookEvent);
+      const genericMessage = this.whatsAppAdapter.convertToGenericMessage(webhookEvent);
+      await this.handleGenericMessage.execute(genericMessage);
     }
 
     res.sendStatus(200);
