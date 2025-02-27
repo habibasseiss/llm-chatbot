@@ -1,14 +1,16 @@
 services:
-  sgr_webhook:
+  llm_chatbot:
     build: .
-    container_name: sgr_webhook
+    container_name: llm_chatbot
     environment:
       DATABASE_URL: $DATABASE_URL
+      TEST_DATABASE_URL: $TEST_DATABASE_URL
       WEBHOOK_VERIFY_TOKEN: $WEBHOOK_VERIFY_TOKEN
       GRAPH_API_TOKEN: $GRAPH_API_TOKEN
-      API_URL: $API_URL
-      API_KEY: $API_KEY
       OLLAMA_HOST: $OLLAMA_HOST
+      OPENAI_API_KEY: $OPENAI_API_KEY
+      OPENAI_BASE_URL: $OPENAI_BASE_URL
+      AI_SERVICE: $AI_SERVICE
     restart: unless-stopped
     ports:
       - 3000:3000

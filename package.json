@@ -1,11 +1,11 @@
 {
-  "name": "sgr-webhook",
+  "name": "llm-chatbot",
   "version": "0.0.1",
-  "description": "WhatsApp integration for SGR",
+  "description": "A chatbot with AI capabilities",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/main.js",
+    "start": "node dist/src/main.js",
     "build": "tsc && tsc-alias",
     "dev": "tsx src/main.ts",
     "cli": "ENABLED_SOURCES=cli tsx src/main.ts",
