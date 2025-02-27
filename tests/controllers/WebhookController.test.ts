@@ -1,29 +1,37 @@
 import { WebhookController } from "@/interfaces/controllers/WebhookController";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
-import { HandleIncomingMessage } from "@/usecases/message/HandleIncomingMessage";
+import { HandleGenericMessage } from "@/usecases/message/HandleGenericMessage";
+import { MessageSource } from "@/domain/entities/GenericMessage";
+import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 import express from "express";
 import request from "supertest";
 
 describe("WebhookController", () => {
   let app: express.Application;
   let controller: WebhookController;
-  let mockHandleIncomingMessage: HandleIncomingMessage;
+  let mockHandleGenericMessage: HandleGenericMessage;
 
   beforeEach(() => {
     console.log = jest.fn();
     app = express();
 
     const mockAIGateway: AIGateway = {
-      getAIResponse: jest.fn(),
+      getAIResponse: jest.fn().mockResolvedValue(JSON.stringify({
+        bot: "AI response",
+        options: [],
+        closed: false
+      })),
       getAISummary: jest.fn(),
     };
 
-    mockHandleIncomingMessage = new HandleIncomingMessage(
-      "mock-token",
+    // Create mock adapters map
+    const adaptersMap = new Map<MessageSource, MessageSourceAdapter<any>>();
+    
+    mockHandleGenericMessage = new HandleGenericMessage(
       mockAIGateway,
       {
         getSessionId: jest.fn().mockResolvedValue("test-session-id"),
-        getPromptHistory: jest.fn().mockResolvedValue([]),
+        getPromptHistory: jest.fn().mockResolvedValue({ messages: [] }),
         savePrompt: jest.fn(),
         closeSession: jest.fn(),
       },
@@ -33,10 +41,11 @@ describe("WebhookController", () => {
           session_duration: 24,
           llm_model: "mock-model",
         }),
-      }
+      },
+      adaptersMap
     );
 
-    controller = new WebhookController(mockHandleIncomingMessage);
+    controller = new WebhookController(mockHandleGenericMessage, "mock-graph-api-token");
     app.use(express.json());
     app.post("/webhook", controller.handleWebhook.bind(controller));
     app.get("/webhook", controller.verifyWebhook.bind(controller));

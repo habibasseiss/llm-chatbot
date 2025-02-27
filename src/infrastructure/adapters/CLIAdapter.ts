@@ -50,17 +50,7 @@ export class CLIAdapter implements MessageSourceAdapter<string> {
 
   initialize(): void {
     console.log("CLI Chatbot initialized. Type 'exit' to quit.");
-    this.promptUserName();
-  }
-
-  private promptUserName(): void {
-    this.rl.question("Please enter your name: ", (name) => {
-      this.userName = name || "CLI User";
-      console.log(
-        `Hello, ${this.userName}! Type your message or 'exit' to quit.`
-      );
-      this.startListening();
-    });
+    this.startListening();
   }
 
   private startListening(): void {
