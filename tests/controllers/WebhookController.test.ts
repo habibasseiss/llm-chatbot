@@ -41,8 +41,15 @@ describe("WebhookController", () => {
         getSettings: jest.fn().mockResolvedValue({
           system_prompt: "mock prompt",
           session_duration: 24,
-          llm_model: "mock-model",
+          llm_config: {
+            model: "mock-model",
+            temperature: 0.7,
+            top_p: 1,
+            max_tokens: 1024,
+          },
         }),
+        getSetting: jest.fn(),
+        updateSetting: jest.fn(),
       },
       adaptersMap
     );

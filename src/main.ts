@@ -7,7 +7,6 @@ import { MessageSource } from "./domain/entities/GenericMessage";
 import { CLIAdapter } from "./infrastructure/adapters/CLIAdapter";
 import { WhatsAppAdapter } from "./infrastructure/adapters/WhatsAppAdapter";
 import { DatabaseSettingsGateway } from "./infrastructure/gateways/DatabaseSettingsGateway";
-import { GroqAIGateway } from "./infrastructure/gateways/GroqAIGateway";
 import { OllamaAIGateway } from "./infrastructure/gateways/OllamaAIGateway";
 import { OpenAIAIGateway } from "./infrastructure/gateways/OpenAIAIGateway";
 import { MessageSourceAdapter } from "./interfaces/adapters/MessageSourceAdapter";
@@ -25,10 +24,7 @@ const {
   OPENAI_API_KEY,
   GRAPH_API_TOKEN,
   OLLAMA_HOST,
-  GROQ_API_KEY,
   DATABASE_URL,
-  API_URL,
-  API_KEY,
 } = process.env;
 
 // Get the enabled message sources from environment variables or default to all
@@ -47,9 +43,6 @@ switch (aiService) {
     break;
   case "ollama":
     aiGateway = new OllamaAIGateway(OLLAMA_HOST!);
-    break;
-  case "groq":
-    aiGateway = new GroqAIGateway(GROQ_API_KEY!);
     break;
   default:
     throw new Error(`Invalid AI service: ${aiService}`);

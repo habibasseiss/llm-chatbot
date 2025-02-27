@@ -17,7 +17,7 @@ export class HandleChatSession implements UseCase {
     // Request prompt to AI and ask for a summary in json format (returns string)
     const summary = await this.aiGateway.getAISummary(
       chatHistory,
-      settings.llm_model
+      settings.llm_config
     );
 
     // Close the session and save the final summary

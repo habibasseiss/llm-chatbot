@@ -19,11 +19,16 @@ export default async function(db) {
     return;
   }
   
-  // Example settings to seed
+  // Example settings to seed with values as JSON
   const settings = [
     { key: 'system_prompt', value: 'You are a helpful AI assistant.' },
-    { key: 'session_duration', value: '24' },
-    { key: 'llm_model', value: 'gpt-4' },
+    { key: 'session_duration', value: 24 },
+    { key: 'llm_config', value: JSON.stringify({
+      model: 'gpt-4',
+      temperature: 0.7,
+      top_p: 0.2,
+      max_tokens: null
+    })},
   ];
   
   console.log('Seeding initial settings...');

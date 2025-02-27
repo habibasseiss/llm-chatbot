@@ -40,8 +40,15 @@ describe("HandleGenericMessage", () => {
       getSettings: jest.fn().mockResolvedValue({
         system_prompt: "system prompt",
         session_duration: 24,
-        llm_model: "model-id",
+        llm_config: {
+          model: "model-id",
+          temperature: 0.7,
+          top_p: 1,
+          max_tokens: 1024,
+        },
       } as GeneralSettings),
+      getSetting: jest.fn(),
+      updateSetting: jest.fn(),
     };
 
     // Mock Prompt Repository

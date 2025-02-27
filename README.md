@@ -8,7 +8,7 @@ A multi-platform chatbot service built with TypeScript that handles incoming mes
   - WhatsApp message webhook handling
   - Command-line interface (CLI)
   - Easily extensible to other platforms
-- AI-powered chat sessions using Ollama, OpenAI, or Groq
+- AI-powered chat sessions using Ollama or OpenAI
 - PostgreSQL database integration for prompt management
 - RESTful API endpoints
 - Clean architecture implementation (Domain-Driven Design)
@@ -21,7 +21,7 @@ src/
 ├── infrastructure/   # External services implementation
 │   ├── adapters/     # Platform-specific adapters (WhatsApp, CLI)
 │   ├── database/     # Database connections and configurations
-│   ├── gateways/     # External service integrations (Ollama, OpenAI, Groq)
+│   ├── gateways/     # External service integrations (Ollama, OpenAI)
 │   ├── repositories/ # Data access implementations
 │   └── webserver/    # Express server setup
 ├── interfaces/       # Controllers and gateway interfaces
@@ -32,7 +32,7 @@ src/
 
 - Node.js >= 16.0.0
 - PostgreSQL database
-- AI service (Ollama, OpenAI, or Groq)
+- AI service (Ollama or OpenAI)
 - WhatsApp Business API access (for WhatsApp integration)
 
 ## Environment Variables
@@ -40,7 +40,7 @@ src/
 ```
 # Required
 DATABASE_URL=      # PostgreSQL connection URL
-AI_SERVICE=        # AI service to use (openai, ollama, or groq)
+AI_SERVICE=        # AI service to use (openai, ollama)
 
 # Optional - Platform selection
 ENABLED_SOURCES=   # Comma-separated list of enabled platforms (whatsapp,cli)
@@ -53,7 +53,6 @@ WEBHOOK_VERIFY_TOKEN= # Token for webhook verification
 OLLAMA_HOST=       # Ollama AI service host (if using Ollama)
 OPENAI_BASE_URL=   # OpenAI API base URL (if using OpenAI)
 OPENAI_API_KEY=    # OpenAI API key (if using OpenAI)
-GROQ_API_KEY=      # Groq API key (if using Groq)
 ```
 
 ## Installation
@@ -123,7 +122,7 @@ The project follows clean architecture principles with clear separation of conce
 
 - TypeScript
 - Express.js
-- AI Services (Ollama, OpenAI, Groq)
+- AI Services (Ollama, OpenAI)
 - PostgreSQL
 - Jest (Testing)
 - Node.js

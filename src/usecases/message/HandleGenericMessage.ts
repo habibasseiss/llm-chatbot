@@ -41,7 +41,7 @@ export class HandleGenericMessage implements UseCase {
       let chatHistory = await this.promptRepository.getPromptHistory(sessionId);
       if (chatHistory.messages.length === 0) {
         await this.promptRepository.savePrompt({
-          content: settings.system_prompt,
+          content: settings.system_prompt + "\n\nRespond in JSON.",
           role: "system",
           sessionId: sessionId,
         });
@@ -60,7 +60,7 @@ export class HandleGenericMessage implements UseCase {
       // Get the AI response
       const aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
-        settings.llm_model
+        settings.llm_config
       );
       console.log("Raw AI response:", aiResponse);
 
@@ -89,7 +89,7 @@ export class HandleGenericMessage implements UseCase {
         // Request another prompt to AI and ask for a summary in json format
         const summary = await this.aiGateway.getAISummary(
           chatHistory,
-          settings.llm_model
+          settings.llm_config
         );
 
         // Close the session and save the final summary

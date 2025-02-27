@@ -1,13 +1,8 @@
 import { ChatHistory } from "@/domain/entities/Prompt";
+import { AIMessageSchema, AIOptions } from "@/domain/types/LLMConfig";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { Ollama } from "ollama";
-
-const DEFAULT_MODEL = "llama3.2-vision";
-const OLLAMA_OPTIONS = {
-  num_ctx: 8192,
-  temperature: 0.3,
-  top_p: 0.2,
-};
+import { zodResponseFormat } from "openai/helpers/zod";
 
 export class OllamaAIGateway implements AIGateway {
   private ollama;
@@ -18,33 +13,21 @@ export class OllamaAIGateway implements AIGateway {
 
   async getAIResponse(
     chatHistory: ChatHistory,
-    llmModel?: string
+    aiOptions: AIOptions
   ): Promise<string> {
     const response = await this.ollama.chat({
       messages: chatHistory.messages.map((message) => ({
         role: message.role,
         content: message.content,
       })),
-      format: {
-        type: "object",
-        properties: {
-          bot: {
-            type: "string",
-          },
-          options: {
-            type: "array",
-            items: {
-              type: "string",
-            },
-          },
-          closed: {
-            type: "boolean",
-          },
-        },
-        required: ["bot"],
+      format: zodResponseFormat(AIMessageSchema, "message_response").json_schema
+        .schema,
+      model: aiOptions.model,
+      options: {
+        num_ctx: aiOptions.max_tokens,
+        temperature: aiOptions.temperature,
+        top_p: aiOptions.top_p,
       },
-      model: llmModel || DEFAULT_MODEL,
-      options: OLLAMA_OPTIONS,
       stream: false,
     });
 
@@ -53,7 +36,7 @@ export class OllamaAIGateway implements AIGateway {
 
   async getAISummary(
     chatHistory: ChatHistory,
-    llmModel?: string
+    aiOptions: AIOptions
   ): Promise<string> {
     const systemPrompt = `Você receberá uma conversa e deverá convertê-lo em um JSON. Detecte a cidade, o título e faça um resumo contendo sobre tudo o que foi relatado na conversa. Se alguma informação não estiver presente, deixe o campo vazio. Não forneça informações a mais do que as que estão presentes na conversa. Use sempre Português do Brasil.`;
 
@@ -82,8 +65,12 @@ export class OllamaAIGateway implements AIGateway {
         },
         required: ["cidade", "titulo", "resumo"],
       },
-      model: llmModel || DEFAULT_MODEL,
-      options: OLLAMA_OPTIONS,
+      model: aiOptions.model,
+      options: {
+        num_ctx: aiOptions.max_tokens,
+        temperature: aiOptions.temperature,
+        top_p: aiOptions.top_p,
+      },
       stream: false,
     });
 
