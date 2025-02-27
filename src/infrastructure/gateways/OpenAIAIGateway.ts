@@ -12,7 +12,7 @@ const OPENAI_OPTIONS = {
 export class OpenAIAIGateway implements AIGateway {
   private openai;
 
-  constructor(host: string, apiKey: string) {
+  constructor(host: string | undefined, apiKey: string) {
     this.openai = new OpenAI({
       baseURL: host,
       apiKey: apiKey,
@@ -33,9 +33,10 @@ export class OpenAIAIGateway implements AIGateway {
     const response = await this.openai.chat.completions.create({
       model: llmModel || DEFAULT_MODEL,
       messages: messages,
-      response_format: {
-        type: "json_object",
-      },
+      // TODO: fix this
+      // response_format: {
+      //   type: "json_object",
+      // },
       temperature: OPENAI_OPTIONS?.temperature || 0.7,
       max_tokens: null,
     });

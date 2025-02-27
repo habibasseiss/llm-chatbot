@@ -3,9 +3,9 @@ import {
   Metadata,
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
+import { WhatsAppAdapter } from "@/infrastructure/adapters/WhatsAppAdapter";
 import { HandleGenericMessage } from "@/usecases/message/HandleGenericMessage";
 import { Request, Response } from "express";
-import { WhatsAppAdapter } from "@/infrastructure/adapters/WhatsAppAdapter";
 
 export class WebhookController {
   private whatsAppAdapter: WhatsAppAdapter;
@@ -20,13 +20,14 @@ export class WebhookController {
   async handleWebhook(req: Request, res: Response) {
     console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
 
-    const webhookEvent: WhatsAppWebhookEvent = req.body.entry?.[0]?.changes?.[0]
-      ?.value;
+    const webhookEvent: WhatsAppWebhookEvent =
+      req.body.entry?.[0]?.changes?.[0]?.value;
     const message: Message | undefined = webhookEvent?.messages?.[0];
     const metadata: Metadata | undefined = webhookEvent?.metadata;
 
     if (message && metadata) {
-      const genericMessage = this.whatsAppAdapter.convertToGenericMessage(webhookEvent);
+      const genericMessage =
+        this.whatsAppAdapter.convertToGenericMessage(webhookEvent);
       await this.handleGenericMessage.execute(genericMessage);
     }
 
@@ -38,10 +39,7 @@ export class WebhookController {
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
-    if (
-      mode === "subscribe" &&
-      token === process.env.WEBHOOK_VERIFY_TOKEN
-    ) {
+    if (mode === "subscribe" && token === process.env.WEBHOOK_VERIFY_TOKEN) {
       res.status(200).send(challenge);
       console.log("Webhook verified successfully!");
     } else {

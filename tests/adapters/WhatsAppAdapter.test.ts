@@ -1,4 +1,8 @@
-import { GenericMessage, MessageSource } from "@/domain/entities/GenericMessage";
+import { FACEBOOK_GRAPH_API } from "@/constants/api";
+import {
+  GenericMessage,
+  MessageSource,
+} from "@/domain/entities/GenericMessage";
 import { WhatsAppWebhookEvent } from "@/domain/entities/Message";
 import { WhatsAppAdapter } from "@/infrastructure/adapters/WhatsAppAdapter";
 import axios from "axios";
@@ -10,14 +14,14 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 describe("WhatsAppAdapter", () => {
   let whatsAppAdapter: WhatsAppAdapter;
   let mockWebhookEvent: WhatsAppWebhookEvent;
-  
+
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Create WhatsAppAdapter instance
     whatsAppAdapter = new WhatsAppAdapter("mock-graph-api-token");
-    
+
     // Create mock webhook event
     mockWebhookEvent = {
       messaging_product: "whatsapp",
@@ -45,15 +49,15 @@ describe("WhatsAppAdapter", () => {
         },
       ],
     };
-    
+
     // Mock axios responses
     mockedAxios.post.mockResolvedValue({ data: { success: true } });
   });
-  
+
   describe("convertToGenericMessage", () => {
     it("should convert WhatsApp webhook event to GenericMessage for text messages", () => {
       const result = whatsAppAdapter.convertToGenericMessage(mockWebhookEvent);
-      
+
       expect(result).toEqual({
         id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
         userId: "556792326246",
@@ -64,7 +68,7 @@ describe("WhatsAppAdapter", () => {
         rawData: mockWebhookEvent,
       });
     });
-    
+
     it("should convert WhatsApp webhook event to GenericMessage for button reply", () => {
       const buttonReplyEvent: WhatsAppWebhookEvent = {
         ...mockWebhookEvent,
@@ -85,9 +89,9 @@ describe("WhatsAppAdapter", () => {
           },
         ],
       };
-      
+
       const result = whatsAppAdapter.convertToGenericMessage(buttonReplyEvent);
-      
+
       expect(result).toEqual({
         id: "wamid.button123",
         userId: "556792326246",
@@ -98,7 +102,7 @@ describe("WhatsAppAdapter", () => {
         rawData: buttonReplyEvent,
       });
     });
-    
+
     it("should convert WhatsApp webhook event to GenericMessage for list reply", () => {
       const listReplyEvent: WhatsAppWebhookEvent = {
         ...mockWebhookEvent,
@@ -119,9 +123,9 @@ describe("WhatsAppAdapter", () => {
           },
         ],
       };
-      
+
       const result = whatsAppAdapter.convertToGenericMessage(listReplyEvent);
-      
+
       expect(result).toEqual({
         id: "wamid.list123",
         userId: "556792326246",
@@ -133,7 +137,7 @@ describe("WhatsAppAdapter", () => {
       });
     });
   });
-  
+
   describe("sendResponse", () => {
     it("should mark message as read and send text response", async () => {
       const genericMessage: GenericMessage = {
@@ -145,17 +149,20 @@ describe("WhatsAppAdapter", () => {
         source: MessageSource.WHATSAPP,
         rawData: mockWebhookEvent,
       };
-      
-      await whatsAppAdapter.sendResponse(genericMessage, { content: "Hello, human!" });
-      
+
+      await whatsAppAdapter.sendResponse(genericMessage, {
+        content: "Hello, human!",
+      });
+
       // Should mark message as read
       expect(mockedAxios.post).toHaveBeenNthCalledWith(
         1,
-        "https://graph.facebook.com/v17.0/284011161465592/messages",
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES("284011161465592"),
         {
           messaging_product: "whatsapp",
           status: "read",
-          message_id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+          message_id:
+            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
         },
         {
           headers: {
@@ -164,11 +171,11 @@ describe("WhatsAppAdapter", () => {
           },
         }
       );
-      
+
       // Should send text message
       expect(mockedAxios.post).toHaveBeenNthCalledWith(
         2,
-        "https://graph.facebook.com/v17.0/284011161465592/messages",
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES("284011161465592"),
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -187,7 +194,7 @@ describe("WhatsAppAdapter", () => {
         }
       );
     });
-    
+
     it("should send interactive message when options are provided", async () => {
       const genericMessage: GenericMessage = {
         id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
@@ -198,12 +205,12 @@ describe("WhatsAppAdapter", () => {
         source: MessageSource.WHATSAPP,
         rawData: mockWebhookEvent,
       };
-      
-      await whatsAppAdapter.sendResponse(genericMessage, { 
-        content: "How can I help you?", 
-        options: ["Option 1", "Option 2"] 
+
+      await whatsAppAdapter.sendResponse(genericMessage, {
+        content: "How can I help you?",
+        options: ["Option 1", "Option 2"],
       });
-      
+
       // Should mark message as read (first call)
       expect(mockedAxios.post).toHaveBeenNthCalledWith(
         1,
@@ -213,11 +220,11 @@ describe("WhatsAppAdapter", () => {
         }),
         expect.any(Object)
       );
-      
+
       // Should send interactive message (second call)
       expect(mockedAxios.post).toHaveBeenNthCalledWith(
         2,
-        "https://graph.facebook.com/v17.0/284011161465592/messages",
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES("284011161465592"),
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -249,7 +256,7 @@ describe("WhatsAppAdapter", () => {
       );
     });
   });
-  
+
   describe("initialize", () => {
     it("should log initialization message", () => {
       const consoleSpy = jest.spyOn(console, "log");

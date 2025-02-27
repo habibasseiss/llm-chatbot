@@ -7,7 +7,7 @@ export class HandleChatSession implements UseCase {
   constructor(
     private aiGateway: AIGateway,
     private promptRepository: PromptRepository,
-    private apiGateway: APIGateway,
+    private apiGateway: APIGateway
   ) {}
 
   async execute(sessionId: string): Promise<string> {
@@ -17,7 +17,7 @@ export class HandleChatSession implements UseCase {
     // Request prompt to AI and ask for a summary in json format (returns string)
     const summary = await this.aiGateway.getAISummary(
       chatHistory,
-      settings.llm_model,
+      settings.llm_model
     );
 
     // Close the session and save the final summary

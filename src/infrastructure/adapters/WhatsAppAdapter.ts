@@ -1,15 +1,27 @@
-import { GenericMessage, GenericResponse, MessageSource } from "@/domain/entities/GenericMessage";
-import { Message, Metadata, OptionList, WhatsAppWebhookEvent } from "@/domain/entities/Message";
+import { FACEBOOK_GRAPH_API } from "@/constants/api";
+import {
+  GenericMessage,
+  GenericResponse,
+  MessageSource,
+} from "@/domain/entities/GenericMessage";
+import {
+  Message,
+  Metadata,
+  OptionList,
+  WhatsAppWebhookEvent,
+} from "@/domain/entities/Message";
 import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 import axios from "axios";
 
-export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEvent> {
+export class WhatsAppAdapter
+  implements MessageSourceAdapter<WhatsAppWebhookEvent>
+{
   constructor(private graphApiToken: string) {}
 
   convertToGenericMessage(webhookEvent: WhatsAppWebhookEvent): GenericMessage {
     const message: Message = webhookEvent.messages[0];
     const contact = webhookEvent.contacts[0];
-    
+
     let messageContent = "";
     if (message.type == "interactive") {
       if (message.interactive?.type == "button_reply") {
@@ -29,19 +41,24 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
       content: messageContent,
       timestamp: message.timestamp,
       source: MessageSource.WHATSAPP,
-      rawData: webhookEvent
+      rawData: webhookEvent,
     };
   }
 
-  async sendResponse(originalMessage: GenericMessage, response: GenericResponse): Promise<void> {
+  async sendResponse(
+    originalMessage: GenericMessage,
+    response: GenericResponse
+  ): Promise<void> {
     const webhookEvent = originalMessage.rawData as WhatsAppWebhookEvent;
     const message = webhookEvent.messages[0];
     const metadata = webhookEvent.metadata;
-    
+
     await this.markMessageAsRead(message, metadata);
-    
+
     if (response.options && response.options.length > 0) {
-      await this.sendInteractiveMessage(message, metadata, response.content, { options: response.options });
+      await this.sendInteractiveMessage(message, metadata, response.content, {
+        options: response.options,
+      });
     } else {
       await this.sendTextMessage(message, metadata, response.content);
     }
@@ -55,7 +72,7 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
   private async markMessageAsRead(message: Message, metadata: Metadata) {
     try {
       await axios.post(
-        `https://graph.facebook.com/v17.0/${metadata.phone_number_id}/messages`,
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(metadata.phone_number_id),
         {
           messaging_product: "whatsapp",
           status: "read",
@@ -66,17 +83,21 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
             Authorization: `Bearer ${this.graphApiToken}`,
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     } catch (error) {
       console.error("Error marking message as read:", error);
     }
   }
 
-  private async sendTextMessage(message: Message, metadata: Metadata, text: string) {
+  private async sendTextMessage(
+    message: Message,
+    metadata: Metadata,
+    text: string
+  ) {
     try {
       await axios.post(
-        `https://graph.facebook.com/v17.0/${metadata.phone_number_id}/messages`,
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(metadata.phone_number_id),
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -92,7 +113,7 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
             Authorization: `Bearer ${this.graphApiToken}`,
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     } catch (error) {
       console.error("Error sending message:", error);
@@ -103,7 +124,7 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
     message: Message,
     metadata: Metadata,
     text: string,
-    optionList: OptionList,
+    optionList: OptionList
   ) {
     try {
       const rows = optionList.options.map((option, index) => ({
@@ -112,7 +133,7 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
       }));
 
       await axios.post(
-        `https://graph.facebook.com/v17.0/${metadata.phone_number_id}/messages`,
+        FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(metadata.phone_number_id),
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -142,7 +163,7 @@ export class WhatsAppAdapter implements MessageSourceAdapter<WhatsAppWebhookEven
             Authorization: `Bearer ${this.graphApiToken}`,
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     } catch (error) {
       console.error("Error sending interactive message:", error);

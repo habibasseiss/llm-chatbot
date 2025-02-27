@@ -11,8 +11,8 @@ export interface GenericMessage {
 
 // Supported message sources
 export enum MessageSource {
-  WHATSAPP = 'whatsapp',
-  CLI = 'cli',
+  WHATSAPP = "whatsapp",
+  CLI = "cli",
   // Add more sources as needed
 }
 

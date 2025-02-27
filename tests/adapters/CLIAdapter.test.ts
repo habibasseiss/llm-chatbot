@@ -1,4 +1,7 @@
-import { GenericMessage, MessageSource } from "@/domain/entities/GenericMessage";
+import {
+  GenericMessage,
+  MessageSource,
+} from "@/domain/entities/GenericMessage";
 import { CLIAdapter } from "@/infrastructure/adapters/CLIAdapter";
 import readline from "readline";
 
@@ -31,10 +34,10 @@ describe("CLIAdapter", () => {
   beforeEach(() => {
     // Clear console output
     consoleOutput = [];
-    
+
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Setup mock readline interface
     mockLineHandler = jest.fn();
     mockRl = {
@@ -46,7 +49,7 @@ describe("CLIAdapter", () => {
       close: jest.fn(),
     };
     (readline.createInterface as jest.Mock).mockReturnValue(mockRl);
-    
+
     // Create CLIAdapter instance
     cliAdapter = new CLIAdapter();
   });
@@ -59,20 +62,23 @@ describe("CLIAdapter", () => {
   describe("initialize", () => {
     it("should set up readline interface and start listening", () => {
       cliAdapter.initialize();
-      
+
       expect(readline.createInterface).toHaveBeenCalledWith({
         input: process.stdin,
         output: process.stdout,
+        terminal: false,
       });
       expect(mockRl.on).toHaveBeenCalledWith("line", expect.any(Function));
-      expect(consoleOutput[0]).toBe("CLI Chatbot initialized. Type 'exit' to quit.");
+      expect(consoleOutput[0]).toBe(
+        "CLI Chatbot initialized. Type 'exit' to quit."
+      );
     });
   });
 
   describe("convertToGenericMessage", () => {
     it("should convert CLI input to a GenericMessage", () => {
       const result = cliAdapter.convertToGenericMessage("Hello, bot!");
-      
+
       expect(result).toEqual({
         id: "mock-uuid",
         userId: "cli-user",
@@ -95,9 +101,9 @@ describe("CLIAdapter", () => {
         timestamp: new Date().toISOString(),
         source: MessageSource.CLI,
       };
-      
+
       await cliAdapter.sendResponse(message, { content: "Hello, human!" });
-      
+
       expect(consoleOutput[0]).toBe("\n🤖 Bot: Hello, human!");
     });
 
@@ -110,12 +116,12 @@ describe("CLIAdapter", () => {
         timestamp: new Date().toISOString(),
         source: MessageSource.CLI,
       };
-      
-      await cliAdapter.sendResponse(message, { 
-        content: "How can I help you?", 
-        options: ["Option 1", "Option 2"] 
+
+      await cliAdapter.sendResponse(message, {
+        content: "How can I help you?",
+        options: ["Option 1", "Option 2"],
       });
-      
+
       expect(consoleOutput[0]).toBe("\n🤖 Bot: How can I help you?");
       expect(consoleOutput[1]).toBe("\nOptions:");
       expect(consoleOutput[2]).toBe("1. Option 1");
@@ -129,27 +135,31 @@ describe("CLIAdapter", () => {
       const mockHandler = jest.fn();
       cliAdapter.setMessageHandler(mockHandler);
       cliAdapter.initialize();
-      
+
       // Simulate user input
       await mockLineHandler("Hello, bot!");
-      
-      expect(mockHandler).toHaveBeenCalledWith(expect.objectContaining({
-        content: "Hello, bot!",
-        source: MessageSource.CLI,
-      }));
+
+      expect(mockHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: "Hello, bot!",
+          source: MessageSource.CLI,
+        })
+      );
     });
 
     it("should exit when 'exit' is typed", async () => {
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+      const mockExit = jest
+        .spyOn(process, "exit")
+        .mockImplementation(() => undefined as never);
       cliAdapter.initialize();
-      
+
       // Simulate 'exit' input
       await mockLineHandler("exit");
-      
+
       expect(mockRl.close).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(0);
       expect(consoleOutput[1]).toBe("Goodbye!");
-      
+
       mockExit.mockRestore();
     });
   });

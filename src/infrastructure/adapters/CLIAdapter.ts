@@ -18,6 +18,7 @@ export class CLIAdapter implements MessageSourceAdapter<string> {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
+      terminal: false,
     });
   }
 

@@ -1,4 +1,7 @@
-import { APIGateway, GeneralSettings } from "../../interfaces/gateways/APIGateway";
+import {
+  APIGateway,
+  GeneralSettings,
+} from "../../interfaces/gateways/APIGateway";
 import { DatabaseConnection } from "../database/DatabaseConnection";
 
 export class DatabaseSettingsGateway implements APIGateway {
@@ -14,7 +17,10 @@ export class DatabaseSettingsGateway implements APIGateway {
 
     return {
       system_prompt: settingsMap.get("system_prompt") || "",
-      session_duration: parseInt(settingsMap.get("session_duration") || "3600", 10),
+      session_duration: parseInt(
+        settingsMap.get("session_duration") || "3600",
+        10
+      ),
       llm_model: settingsMap.get("llm_model") || "gpt-3.5-turbo",
     };
   }

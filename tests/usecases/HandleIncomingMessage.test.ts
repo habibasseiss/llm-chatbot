@@ -1,3 +1,4 @@
+import { FACEBOOK_GRAPH_API } from "@/constants/api";
 import { WhatsAppWebhookEvent } from "@/domain/entities/Message";
 import { PromptRepository } from "@/domain/repositories/PromptRepository";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
@@ -12,11 +13,13 @@ jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 const mockAIGateway: AIGateway = {
-  getAIResponse: jest.fn().mockResolvedValue(JSON.stringify({
-    bot: "AI response",
-    options: [],
-    closed: false
-  })),
+  getAIResponse: jest.fn().mockResolvedValue(
+    JSON.stringify({
+      bot: "AI response",
+      options: [],
+      closed: false,
+    })
+  ),
   getAISummary: jest.fn(),
 };
 
@@ -89,23 +92,30 @@ describe("HandleIncomingMessage", () => {
   it("should mark the message as read and send a reply", async () => {
     await handleIncomingMessage.execute(webhookEvent);
 
-    expect(mockedAxios).toHaveBeenNthCalledWith(1,
+    expect(mockedAxios).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         method: "POST",
-        url: `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
+        url: FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(
+          webhookEvent.metadata.phone_number_id
+        ),
         data: {
           messaging_product: "whatsapp",
           status: "read",
-          message_id: "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
+          message_id:
+            "wamid.HBgMNTU2NzkyMzI2MjQ2FQIAEhgUM0FERkY1NzhBNkRFRUFFQjFBOUYA",
         },
         headers: { Authorization: `Bearer mock-graph-api-token` },
       })
     );
 
-    expect(mockedAxios).toHaveBeenNthCalledWith(2,
+    expect(mockedAxios).toHaveBeenNthCalledWith(
+      2,
       expect.objectContaining({
         method: "POST",
-        url: `https://graph.facebook.com/v18.0/${webhookEvent.metadata.phone_number_id}/messages`,
+        url: FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(
+          webhookEvent.metadata.phone_number_id
+        ),
         data: {
           messaging_product: "whatsapp",
           to: "556792326246",

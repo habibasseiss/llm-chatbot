@@ -5,12 +5,17 @@ import { DatabaseSettingsGateway } from "../infrastructure/gateways/DatabaseSett
 config();
 
 async function initSettings() {
-  const dbConnection = new PostgresDatabaseConnection(process.env.DATABASE_URL!);
+  const dbConnection = new PostgresDatabaseConnection(
+    process.env.DATABASE_URL!
+  );
   const settingsGateway = new DatabaseSettingsGateway(dbConnection);
 
   try {
     // Initialize default settings
-    await settingsGateway.updateSetting("system_prompt", "You are a helpful AI assistant.");
+    await settingsGateway.updateSetting(
+      "system_prompt",
+      "You are a helpful AI assistant."
+    );
     await settingsGateway.updateSetting("session_duration", "3600");
     await settingsGateway.updateSetting("llm_model", "gpt-3.5-turbo");
 

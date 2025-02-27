@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import pgp from 'pg-promise';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();

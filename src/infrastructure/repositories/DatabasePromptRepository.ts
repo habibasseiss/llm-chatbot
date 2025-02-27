@@ -3,13 +3,12 @@ import { PromptRepository } from "@/domain/repositories/PromptRepository";
 import { DatabaseConnection } from "@/infrastructure/database/DatabaseConnection";
 
 export class DatabasePromptRepository implements PromptRepository {
-  constructor(readonly connection: DatabaseConnection) {
-  }
+  constructor(readonly connection: DatabaseConnection) {}
 
   async getSessionId(
     userId: string,
     userProfileName?: string,
-    expiration_hours: number = 24,
+    expiration_hours: number = 24
   ): Promise<string> {
     // get the session for user_id or create a new one if expiration_hours has passed
     let query = `SELECT * FROM sessions
@@ -18,15 +17,12 @@ export class DatabasePromptRepository implements PromptRepository {
         AND closed = false
         AND created_at > NOW() - INTERVAL '${expiration_hours} hours'`;
 
-    const sessions = await this.connection.query<Session[]>(query, [
-      userId,
-    ]);
+    const sessions = await this.connection.query<Session[]>(query, [userId]);
     let session: Session;
 
     if (sessions.length === 0) {
       // If no session exists, create a new one
-      query =
-        `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
+      query = `INSERT INTO sessions (user_id, user_profile_name) VALUES ($1, $2) RETURNING id`;
       session = await this.connection.one<Session>(query, [
         userId,
         userProfileName,
@@ -41,8 +37,7 @@ export class DatabasePromptRepository implements PromptRepository {
 
   async closeSession(sessionId: string, summary?: string): Promise<void> {
     if (summary) {
-      const query =
-        `UPDATE sessions SET closed = true, summary = $2 WHERE id = $1 AND summary IS NULL`;
+      const query = `UPDATE sessions SET closed = true, summary = $2 WHERE id = $1 AND summary IS NULL`;
 
       await this.connection.query(query, [sessionId, summary]);
     } else {
@@ -97,12 +92,7 @@ export class DatabasePromptRepository implements PromptRepository {
     role: string;
     sessionId: string;
   }): Promise<void> {
-    const query =
-      `INSERT INTO prompts (content, role, session_id) VALUES ($1, $2, $3)`;
-    await this.connection.query(query, [
-      content,
-      role,
-      sessionId,
-    ]);
+    const query = `INSERT INTO prompts (content, role, session_id) VALUES ($1, $2, $3)`;
+    await this.connection.query(query, [content, role, sessionId]);
   }
 }

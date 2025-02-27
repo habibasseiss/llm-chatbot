@@ -1,8 +1,8 @@
-import { GenericMessage, MessageSource } from "@/domain/entities/GenericMessage";
+import { MessageSource } from "@/domain/entities/GenericMessage";
 import { WhatsAppWebhookEvent } from "@/domain/entities/Message";
-import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 import { CLIAdapter } from "@/infrastructure/adapters/CLIAdapter";
 import { WhatsAppAdapter } from "@/infrastructure/adapters/WhatsAppAdapter";
+import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 
 // Mock dependencies
 jest.mock("readline", () => ({
@@ -40,7 +40,7 @@ describe("MessageSourceAdapter Interface", () => {
   it("should convert CLI message to GenericMessage with correct source", () => {
     const cliMessage = "Hello from CLI";
     const genericMessage = cliAdapter.convertToGenericMessage(cliMessage);
-    
+
     expect(genericMessage.content).toBe(cliMessage);
     expect(genericMessage.source).toBe(MessageSource.CLI);
   });
@@ -72,9 +72,10 @@ describe("MessageSourceAdapter Interface", () => {
         },
       ],
     };
-    
-    const genericMessage = whatsAppAdapter.convertToGenericMessage(whatsAppMessage);
-    
+
+    const genericMessage =
+      whatsAppAdapter.convertToGenericMessage(whatsAppMessage);
+
     expect(genericMessage.content).toBe("Hello from WhatsApp");
     expect(genericMessage.source).toBe(MessageSource.WHATSAPP);
   });

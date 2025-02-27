@@ -7,26 +7,23 @@ export class ExpressServer {
 
   constructor(
     private webhookController: WebhookController,
-    private apiController: ApiController,
+    private apiController: ApiController
   ) {
     this.app.use(express.json());
     this.setupRoutes();
   }
 
   private setupRoutes() {
-    this.app.post(
-      "/webhook",
-      (req, res) => this.webhookController.handleWebhook(req, res),
+    this.app.post("/webhook", (req, res) =>
+      this.webhookController.handleWebhook(req, res)
     );
 
-    this.app.get(
-      "/webhook",
-      (req, res) => this.webhookController.verifyWebhook(req, res),
+    this.app.get("/webhook", (req, res) =>
+      this.webhookController.verifyWebhook(req, res)
     );
 
-    this.app.get(
-      "/session/summary/:sessionId",
-      (req, res) => this.apiController.handleGenerateSummary(req, res),
+    this.app.get("/session/summary/:sessionId", (req, res) =>
+      this.apiController.handleGenerateSummary(req, res)
     );
 
     this.app.get("/", (req, res) => {

@@ -43,7 +43,7 @@ let aiGateway: AIGateway;
 
 switch (aiService) {
   case "openai":
-    aiGateway = new OpenAIAIGateway(OPENAI_BASE_URL!, OPENAI_API_KEY!);
+    aiGateway = new OpenAIAIGateway(OPENAI_BASE_URL, OPENAI_API_KEY!);
     break;
   case "ollama":
     aiGateway = new OllamaAIGateway(OLLAMA_HOST!);

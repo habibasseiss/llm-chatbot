@@ -1,8 +1,8 @@
+import { MessageSource } from "@/domain/entities/GenericMessage";
+import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 import { WebhookController } from "@/interfaces/controllers/WebhookController";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { HandleGenericMessage } from "@/usecases/message/HandleGenericMessage";
-import { MessageSource } from "@/domain/entities/GenericMessage";
-import { MessageSourceAdapter } from "@/interfaces/adapters/MessageSourceAdapter";
 import express from "express";
 import request from "supertest";
 
@@ -16,17 +16,19 @@ describe("WebhookController", () => {
     app = express();
 
     const mockAIGateway: AIGateway = {
-      getAIResponse: jest.fn().mockResolvedValue(JSON.stringify({
-        bot: "AI response",
-        options: [],
-        closed: false
-      })),
+      getAIResponse: jest.fn().mockResolvedValue(
+        JSON.stringify({
+          bot: "AI response",
+          options: [],
+          closed: false,
+        })
+      ),
       getAISummary: jest.fn(),
     };
 
     // Create mock adapters map
     const adaptersMap = new Map<MessageSource, MessageSourceAdapter<any>>();
-    
+
     mockHandleGenericMessage = new HandleGenericMessage(
       mockAIGateway,
       {
@@ -45,7 +47,10 @@ describe("WebhookController", () => {
       adaptersMap
     );
 
-    controller = new WebhookController(mockHandleGenericMessage, "mock-graph-api-token");
+    controller = new WebhookController(
+      mockHandleGenericMessage,
+      "mock-graph-api-token"
+    );
     app.use(express.json());
     app.post("/webhook", controller.handleWebhook.bind(controller));
     app.get("/webhook", controller.verifyWebhook.bind(controller));

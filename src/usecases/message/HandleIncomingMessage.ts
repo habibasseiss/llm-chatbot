@@ -1,3 +1,4 @@
+import { FACEBOOK_GRAPH_API } from "@/constants/api";
 import {
   Message,
   Metadata,
@@ -5,19 +6,19 @@ import {
   WhatsAppWebhookEvent,
 } from "@/domain/entities/Message";
 import { PromptRepository } from "@/domain/repositories/PromptRepository";
+import { AIResponseParser } from "@/infrastructure/parsers/AIResponseParser";
 import { AIGateway } from "@/interfaces/gateways/AIGateway";
 import { APIGateway } from "@/interfaces/gateways/APIGateway";
 import UseCase from "@/usecases/UseCase";
 import axios from "axios";
 import slugify from "slugify";
-import { AIResponseParser } from "@/infrastructure/parsers/AIResponseParser";
 
 export class HandleIncomingMessage implements UseCase {
   constructor(
     private graphApiToken: string,
     private aiGateway: AIGateway,
     private promptRepository: PromptRepository,
-    private apiGateway: APIGateway,
+    private apiGateway: APIGateway
   ) {}
 
   async execute(webhookEvent: WhatsAppWebhookEvent) {
@@ -46,7 +47,7 @@ export class HandleIncomingMessage implements UseCase {
       const sessionId = await this.promptRepository.getSessionId(
         userId,
         webhookEvent?.contacts[0]?.profile?.name,
-        settings.session_duration,
+        settings.session_duration
       );
 
       // Get the prompt history, and if it's the first interaction, store the
@@ -73,12 +74,13 @@ export class HandleIncomingMessage implements UseCase {
       // Get the AI response
       const aiResponse = await this.aiGateway.getAIResponse(
         chatHistory,
-        settings.llm_model,
+        settings.llm_model
       );
       console.log("Raw AI response:", aiResponse);
 
       // Parse the AI response, removing any metadata like [closed]
-      let [responseText, isFinalResponse, optionList] = AIResponseParser.parse(aiResponse);
+      let [responseText, isFinalResponse, optionList] =
+        AIResponseParser.parse(aiResponse);
       console.log("Options:", optionList);
 
       // Save the AI response as assistant in the chat history
@@ -96,7 +98,7 @@ export class HandleIncomingMessage implements UseCase {
         // Request another prompt to AI and ask for a summary in json format
         const summary = await this.aiGateway.getAISummary(
           chatHistory,
-          settings.llm_model,
+          settings.llm_model
         );
 
         await this.promptRepository.closeSession(sessionId, summary);
@@ -110,7 +112,7 @@ export class HandleIncomingMessage implements UseCase {
               message,
               metadata,
               `O resumo do seu rumor é:\n\n${parsedSummary.resumo}`,
-              { options: [] },
+              { options: [] }
             );
           }
         } catch (error) {
@@ -126,7 +128,7 @@ export class HandleIncomingMessage implements UseCase {
     message: Message,
     metadata: Metadata,
     aiResponse: string,
-    optionList: OptionList,
+    optionList: OptionList
   ) {
     const type =
       optionList.options.length > 0 && optionList.options.length <= 10
@@ -151,8 +153,7 @@ export class HandleIncomingMessage implements UseCase {
 
     const data = {
       method: "POST",
-      url:
-        `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
+      url: FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(metadata.phone_number_id),
       headers: {
         Authorization: `Bearer ${this.graphApiToken}`,
       },
@@ -161,37 +162,38 @@ export class HandleIncomingMessage implements UseCase {
         to: message.from,
         type: type,
         text: type == "text" ? { body: aiResponse } : undefined,
-        interactive: type == "interactive"
-          ? interactiveType == "button"
-            ? {
-              type: "button",
-              body: { text: aiResponse },
-              action: {
-                buttons: optionList?.options?.map((option) => ({
-                  type: "reply",
-                  reply: {
-                    id: applySlug(option),
-                    title: truncateTitle(option, 20),
-                  },
-                })),
-              },
-            }
-            : {
-              type: "list",
-              body: { text: aiResponse },
-              action: {
-                button: "Ver opções",
-                sections: [
-                  {
-                    rows: optionList?.options?.map((option) => ({
-                      id: applySlug(option),
-                      title: truncateTitle(option, 24),
+        interactive:
+          type == "interactive"
+            ? interactiveType == "button"
+              ? {
+                  type: "button",
+                  body: { text: aiResponse },
+                  action: {
+                    buttons: optionList?.options?.map((option) => ({
+                      type: "reply",
+                      reply: {
+                        id: applySlug(option),
+                        title: truncateTitle(option, 20),
+                      },
                     })),
                   },
-                ],
-              },
-            }
-          : undefined,
+                }
+              : {
+                  type: "list",
+                  body: { text: aiResponse },
+                  action: {
+                    button: "Ver opções",
+                    sections: [
+                      {
+                        rows: optionList?.options?.map((option) => ({
+                          id: applySlug(option),
+                          title: truncateTitle(option, 24),
+                        })),
+                      },
+                    ],
+                  },
+                }
+            : undefined,
       },
     };
     console.log("Sending reply message:", JSON.stringify(data, null, 2));
@@ -201,8 +203,7 @@ export class HandleIncomingMessage implements UseCase {
   private async markMessageAsRead(message: Message, metadata: Metadata) {
     await axios({
       method: "POST",
-      url:
-        `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
+      url: FACEBOOK_GRAPH_API.ENDPOINTS.MESSAGES(metadata.phone_number_id),
       headers: {
         Authorization: `Bearer ${this.graphApiToken}`,
       },
